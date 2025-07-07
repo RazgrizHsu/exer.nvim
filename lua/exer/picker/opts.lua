@@ -51,6 +51,16 @@ function M:addLang(text, value, name, typeStr)
   return self
 end
 
+function M:addUtil(text, value, name, typeStr)
+  table.insert(self.items, {
+    text = text,
+    value = value,
+    type = typeStr or 'Util',
+    name = name,
+  })
+  return self
+end
+
 function M:build() return self.items end
 
 return M
