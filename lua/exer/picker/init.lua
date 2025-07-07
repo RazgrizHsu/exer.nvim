@@ -138,7 +138,7 @@ function M.show()
       local act = item.act
       local cmd = proj.expandVars(act.cmd)
       local env = act.env or {}
-      local cwd = act.cwd or vim.fn.getcwd()  -- Default to current working directory (project root)
+      local cwd = act.cwd or vim.fn.getcwd() -- Default to current working directory (project root)
 
       if type(cmd) == 'table' then
         for i, c in ipairs(cmd) do

@@ -5,13 +5,10 @@ local M = {}
 --========================================================================
 local co = require('exer.core')
 
-
 --========================================================================
 -- Detect
 --========================================================================
-function M.detect(pathWorkDir)
-  return co.io.fileExists(pathWorkDir .. '/Cargo.toml')
-end
+function M.detect(pathWorkDir) return co.io.fileExists(pathWorkDir .. '/Cargo.toml') end
 
 --========================================================================
 -- Opts

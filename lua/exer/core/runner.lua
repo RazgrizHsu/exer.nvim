@@ -25,7 +25,7 @@ function M.run(config)
   -- Prepare opts for task.mk - include cwd and env for jobstart
   local taskOpts = cfg.opts or {}
   if cfg.cwd then taskOpts.cwd = cfg.cwd end
-  if cfg.env and next(cfg.env) then taskOpts.env = cfg.env end  -- Only set env if it's not empty
+  if cfg.env and next(cfg.env) then taskOpts.env = cfg.env end -- Only set env if it's not empty
 
   local t = task.mk(cfg.name, cfg.cmd, taskOpts)
   task.run(t.id)

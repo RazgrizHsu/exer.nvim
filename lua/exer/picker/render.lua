@@ -25,6 +25,7 @@ local function renderList()
   local currentLine = 0
   local currentValidIdx = 0
   local visibleLines = 0
+  local lineToOptMap = {}
 
   for _, opt in ipairs(ste.filteredOpts) do
     if opt.value == 'separator' then
@@ -47,7 +48,8 @@ local function renderList()
         local typeStr = opt.type or ''
         local textStr = opt.text or ''
         local descStr = opt.desc and (' - ' .. opt.desc) or ''
-        local line = string.format('%3d %-6s %-20s%s', currentValidIdx, typeStr, textStr, descStr)
+        local displayNum = opt.originalNum or currentValidIdx
+        local line = string.format('%3d %-6s %-20s%s', displayNum, typeStr, textStr, descStr)
 
         if currentValidIdx == ste.selectedIdx then
           line = '►' .. line:sub(2)
@@ -56,6 +58,7 @@ local function renderList()
         end
 
         table.insert(lines, line)
+        lineToOptMap[#lines] = opt
         visibleLines = visibleLines + 1
       end
     end
@@ -70,6 +73,9 @@ local function renderList()
 
   local syntaxNs = vim.api.nvim_create_namespace('raz_picker_syntax')
   vim.api.nvim_buf_clear_namespace(ste.listBuf, syntaxNs, 0, -1)
+
+  local matchNs = vim.api.nvim_create_namespace('raz_picker_matches')
+  vim.api.nvim_buf_clear_namespace(ste.listBuf, matchNs, 0, -1)
 
   for i, line in ipairs(lines) do
     local lineIdx = i - 1
@@ -124,6 +130,46 @@ local function renderList()
             vim.api.nvim_buf_set_extmark(ste.listBuf, syntaxNs, lineIdx, actualTypeEnd, {
               end_col = #line,
               hl_group = 'Normal',
+            })
+          end
+        end
+      end
+    end
+  end
+
+  -- Add match highlighting
+  for lineIdx, line in ipairs(lines) do
+    local lineNumber = lineIdx - 1
+    local opt = lineToOptMap[lineIdx]
+
+    if opt and opt.matchType and ste.query ~= '' then
+      local textStart = line:find(opt.text, 1, true)
+      if textStart then
+        local queryLower = ste.query:lower():gsub('%s+', '')
+        local textLower = opt.text:lower():gsub('%s+', '')
+
+        if opt.matchType == 'exact' then
+          local matchStart = textStart + opt.matchStart - 1 - 1
+          local matchEnd = textStart + opt.matchEnd - 1
+          vim.api.nvim_buf_set_extmark(ste.listBuf, matchNs, lineNumber, matchStart, {
+            end_col = matchEnd,
+            hl_group = 'IncSearch',
+          })
+        elseif opt.matchType == 'fuzzy' and opt.matchPositions then
+          for _, pos in ipairs(opt.matchPositions) do
+            local actualPos = textStart + pos - 1 - 1
+            vim.api.nvim_buf_set_extmark(ste.listBuf, matchNs, lineNumber, actualPos, {
+              end_col = actualPos + 1,
+              hl_group = 'Search',
+            })
+          end
+        elseif opt.matchType == 'number' then
+          local numStart = line:find('%d+')
+          if numStart then
+            local numEnd = line:find('%D', numStart) or #line + 1
+            vim.api.nvim_buf_set_extmark(ste.listBuf, matchNs, lineNumber, numStart - 1, {
+              end_col = numEnd - 1,
+              hl_group = 'WarningMsg',
             })
           end
         end

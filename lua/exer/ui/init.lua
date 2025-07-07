@@ -23,9 +23,7 @@ function M.showList(skipFocusList)
     return
   end
 
-  if not prevWin then
-    prevWin = vim.api.nvim_get_current_win()
-  end
+  if not prevWin then prevWin = vim.api.nvim_get_current_win() end
 
   local _, listB, _, palB = wins.createMain(cfgs.all())
 
@@ -69,11 +67,9 @@ end
 function M.close()
   evts.cleanup()
   wins.close()
-  
-  if prevWin and vim.api.nvim_win_is_valid(prevWin) then
-    vim.api.nvim_set_current_win(prevWin)
-  end
-  
+
+  if prevWin and vim.api.nvim_win_is_valid(prevWin) then vim.api.nvim_set_current_win(prevWin) end
+
   prevWin = nil
 end
 
@@ -82,7 +78,7 @@ function M.toggle()
     M.close()
     return
   end
-  
+
   prevWin = vim.api.nvim_get_current_win()
   M.showList()
 end
