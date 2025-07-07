@@ -1,0 +1,14 @@
+{
+  "runtime": {
+    "version": "Lua 5.2"
+  },
+  "workspace": {
+    "library": ["tests/types/"],
+    "checkThirdParty": false
+  },
+  "diagnostics": {
+    "disable": [
+      "need-check-nil"
+    ]
+  }
+}

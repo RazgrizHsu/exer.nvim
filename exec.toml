@@ -1,0 +1,302 @@
+# === Exer Configuration ===
+[exer]
+
+# === Compiler Configurations ===
+# Override default language module compilers with project-specific settings
+[exer.compilers]
+# TypeScript compiler overrides
+typescript.binary.default = "pnpm tsc ${files} --outDir ${output}"
+typescript.binary.debug = "pnpm tsc ${files} --outDir ${output} --sourceMap --preserveWatchOutput"
+typescript.binary.release = "pnpm tsc ${files} --outDir ${output} --removeComments --declaration false"
+
+# C compiler overrides - using clang instead of gcc
+c.binary.default = "clang ${files} -o ${output} ${args}"
+c.binary.debug = "clang ${files} -g -fsanitize=address -O0 -o ${output} ${args}"
+c.binary.release = "clang ${files} -O3 -flto -DNDEBUG -o ${output} ${args}"
+
+# Python compiler configuration - using nuitka for binary creation
+python.binary.nuitka = "python -m nuitka ${files} --onefile --output-dir=${output}"
+python.binary.pyinstaller = "pyinstaller ${files} --onefile --distpath ${output}"
+
+# === Lua Development Tasks ===
+[[exer.acts]]
+id = "lua_check"
+cmd = "lua -l ${name} -e 'print(\"Module loaded successfully\")'"
+desc = "Check Lua module syntax"
+when = "lua"
+
+[[exer.acts]]
+id = "lua_run"
+cmd = "lua ${file}"
+desc = "Run Lua file"
+when = "lua"
+
+# === StyLua Formatting ===
+[[exer.acts]]
+id = "stylua_check"
+cmd = "stylua --check ${file}"
+desc = "Check Lua format"
+when = "lua"
+
+[[exer.acts]]
+id = "stylua_format"
+cmd = "stylua ${file}"
+desc = "Format Lua file"
+when = "lua"
+
+[[exer.acts]]
+id = "stylua_all"
+cmd = [
+  "echo 'Starting to format all Lua files...'",
+  "find . -name '*.lua' -not -path './node_modules/*' | xargs stylua",
+  "echo 'Formatting completed!'"
+]
+desc = "Format all Lua files"
+env = { STYLUA_CONFIG = "stylua.toml" }
+
+# === Test Tasks ===
+[[exer.acts]]
+id = "test_single"
+cmd = "lua ${file}"
+desc = "Run single test file"
+when = "lua"
+cwd = "tests"
+
+[[exer.acts]]
+id = "test_all"
+cmd = [
+  "echo 'Running all tests...'",
+  "lua tests/init.lua",
+  "echo 'Tests completed!'"
+]
+desc = "Run all tests"
+
+[[exer.acts]]
+id = "test_verbose"
+cmd = "lua tests/init.lua"
+desc = "Verbose mode testing"
+env = { LUA_TEST_VERBOSE = "1", DEBUG = "true" }
+
+# === TypeScript Development (if TS files exist) ===
+[[exer.acts]]
+id = "ts_compile"
+cmd = "npx tsc ${file} --outDir dist/"
+desc = "Compile TypeScript file"
+when = ["typescript", "typescriptreact"]
+
+[[exer.acts]]
+id = "ts_run"
+cmd = [
+  "npx tsc ${file} --outDir dist/",
+  "node dist/${name}.js"
+]
+desc = "Compile and run TypeScript"
+when = ["typescript", "typescriptreact"]
+env = { NODE_ENV = "development" }
+
+# === Python Development (if Python files exist) ===
+[[exer.acts]]
+id = "py_run"
+cmd = "python3 ${file}"
+desc = "Run Python file"
+when = "python"
+
+[[exer.acts]]
+id = "py_format"
+cmd = [
+  "black ${file}",
+  "isort ${file}",
+  "flake8 ${file}"
+]
+desc = "Format and check Python code"
+when = "python"
+
+# === Rust Development (if Rust files exist) ===
+[[exer.acts]]
+id = "rust_check"
+cmd = "rustc --check ${file}"
+desc = "Check Rust syntax"
+when = "rust"
+
+[[exer.acts]]
+id = "rust_run"
+cmd = [
+  "rustc ${file} -o ${root}/target/${name}",
+  "${root}/target/${name}"
+]
+desc = "Compile and run Rust program"
+when = "rust"
+cwd = "${dir}"
+
+# === Documentation Generation ===
+[[exer.acts]]
+id = "docs_generate"
+cmd = [
+  "echo 'Generating documentation...'",
+  "ldoc -c docs/config.ld .",
+  "echo 'Documentation generated to docs/html/'"
+]
+desc = "Generate LDoc documentation"
+env = { LDOC_OUTPUT = "docs/html" }
+
+# === Project Management Tasks ===
+[[exer.acts]]
+id = "project_clean"
+cmd = [
+  "echo 'Cleaning project...'",
+  "rm -rf dist/",
+  "rm -rf target/",
+  "rm -rf docs/html/",
+  "find . -name '*.log' -delete",
+  "echo 'Cleanup completed!'"
+]
+desc = "Clean project files"
+
+[[exer.acts]]
+id = "project_setup"
+cmd = [
+  "echo 'Setting up development environment...'",
+  "mkdir -p dist target docs/html",
+  "npm install --silent",
+  "echo 'Environment setup completed!'"
+]
+desc = "Setup development environment"
+env = { NODE_ENV = "development", DEBUG = "1" }
+
+# === Complex Multi-step Deployment Tasks ===
+[[exer.acts]]
+id = "deploy_dev"
+cmd = [
+  "echo 'Starting development environment deployment...'",
+  "stylua --check .",
+  "lua tests/init.lua",
+  "echo 'Tests passed, preparing deployment'",
+  "rsync -av --exclude='*.log' --exclude='node_modules' . dev-server:/opt/plugin/",
+  "echo 'Deployment completed!'"
+]
+desc = "Deploy to development environment"
+env = { DEPLOY_ENV = "development", RSYNC_OPTIONS = "-av --progress" }
+
+# === Performance Testing ===
+[[exer.acts]]
+id = "benchmark"
+cmd = [
+  "echo 'Running performance tests...'",
+  "lua -e 'local start = os.clock(); dofile(\"${file}\"); print(\"Execution time: \" .. (os.clock() - start) .. \" seconds\")'"
+]
+desc = "Performance benchmark testing"
+when = "lua"
+
+# === Git Related Tasks ===
+[[exer.acts]]
+id = "git_commit_format"
+cmd = [
+  "stylua .",
+  "git add -A",
+  "git status"
+]
+desc = "Format and stage changes"
+
+# === File Monitoring Tasks ===
+[[exer.acts]]
+id = "watch_lua"
+cmd = "find . -name '*.lua' | entr -c lua tests/init.lua"
+desc = "Monitor Lua file changes and run tests"
+env = { WATCH_MODE = "1" }
+
+# === Complex Variable Expansion Examples ===
+[[exer.acts]]
+id = "var_demo"
+cmd = [
+  "echo 'File information:'",
+  "echo '  Full path: ${file}'",
+  "echo '  Filename: ${filename}'",
+  "echo '  Base name: ${name}'",
+  "echo '  Extension: ${ext}'",
+  "echo '  File type: ${filetype}'",
+  "echo '  Directory: ${dir}'",
+  "echo '  Project root: ${root}'",
+  "echo '  Current directory: ${cwd}'",
+  "echo '  Directory name: ${dirname}'"
+]
+desc = "Show all supported variables"
+
+# === Apps Configuration Examples ===
+# C program example - using debug profile
+[[exer.apps]]
+name = "hello_world"
+entry = "examples/hello.c"
+output = "dist/hello"
+type = "binary"
+profile = "debug"  # Use debug compiler configuration
+files = ["examples/*.c"]
+build_args = ["-Wall", "-O2"]
+run_args = ["--verbose"]
+
+# C program example - using release profile
+[[exer.apps]]
+name = "hello_optimized"
+entry = "examples/hello.c"
+output = "dist/hello_opt"
+type = "binary"
+profile = "release"  # Use release compiler configuration
+files = ["examples/*.c"]
+build_args = ["-Wall"]
+run_args = []
+
+# Java program example
+[[exer.apps]]
+name = "java_calculator"
+entry = "examples/Calculator.java"
+output = "dist/classes"
+type = "class"
+files = ["examples/*.java"]
+build_args = ["-cp", "lib/*"]
+run_args = ["10", "20"]
+
+# Go program example
+[[exer.apps]]
+name = "go_server"
+entry = "examples/main.go"
+output = "dist/server"
+type = "binary"
+files = ["examples/*.go"]
+build_args = ["-ldflags", "-s -w"]
+run_args = ["--port=8080"]
+
+# Custom command example - overrides all compiler configurations
+[[exer.apps]]
+name = "webpack_app"
+entry = "src/main.js"
+output = "dist/bundle.js"
+build_cmd = "webpack --mode=production --entry=${entry} --output-path=dist/"
+run_cmd = "node ${output}"
+
+# Python nuitka example - using specific compiler profile
+[[exer.apps]]
+name = "python_binary"
+entry = "examples/script.py"
+output = "dist/script"
+type = "binary"
+profile = "nuitka"  # Use nuitka compiler configuration
+files = ["examples/*.py"]
+run_args = ["--help"]
+
+# TypeScript project example
+[[exer.apps]]
+name = "ts_project"
+entry = "src/index.ts"
+output = "dist"
+type = "binary"
+profile = "release"  # Use TypeScript release configuration
+files = ["src/**/*.ts"]
+build_args = []
+run_args = []
+
+# Invalid configuration example (for testing error handling)
+[[exer.apps]]
+name = "invalid_config"
+entry = "nonexistent.unknown"
+output = "dist/invalid"
+type = "unknown_type"
+files = ["*.xyz"]

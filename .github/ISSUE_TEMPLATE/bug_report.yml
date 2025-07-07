@@ -1,0 +1,49 @@
+name: Bug Report
+description: File a bug/issue
+title: "bug: "
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please search existing issues before creating a new one.
+  - type: input
+    attributes:
+      label: "Neovim version (nvim -v)"
+      placeholder: "NVIM v0.10.0"
+    validations:
+      required: true
+  - type: input
+    attributes:
+      label: "Operating system"
+      placeholder: "macOS, Linux, Windows"
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Describe the bug
+      description: A clear description of what the bug is.
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Open exer
+        2. Do something
+        3. See error
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Expected behavior
+      description: What you expected to happen.
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Configuration
+      description: Your exer.nvim setup (if relevant)
+      render: lua
+    validations:
+      required: false
