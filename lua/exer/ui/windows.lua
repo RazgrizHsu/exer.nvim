@@ -1,5 +1,6 @@
 local M = {}
 local syntax = require('exer.ui.syntax')
+local config = require('exer.ui.config')
 
 local state = {
   listW = nil,
@@ -132,7 +133,7 @@ function M.createKeysHelp(cfg)
     zindex = 100,
   })
 
-  local txtKey = ' 󰌑:view  s:stop  c:clear  q:quit  '
+  local txtKey = ' 󰌑:view  ' .. config.keymaps.stop_task .. ':stop  ' .. config.keymaps.clear_completed .. ':clear  ' .. config.keymaps.close_ui .. ':quit  '
   vim.api.nvim_buf_set_lines(state.keysB, 0, -1, false, { txtKey })
 
   vim.api.nvim_set_hl(0, 'RazKeysBlock', {

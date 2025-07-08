@@ -2,6 +2,7 @@ local M = {}
 
 local co = require('exer.core')
 local toml = co.psr.toml
+local editorconfig = co.psr.editorconfig
 
 -- local function trim(s) return s:match('^%s*(.-)%s*$') end
 

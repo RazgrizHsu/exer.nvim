@@ -95,6 +95,30 @@ Install with your favorite package manager:
 | `list_width` | `number` | `36` | Task list width. Values 0.0-1.0 = percentage, >1 = fixed columns |
 | `auto_toggle` | `boolean` | `true` | Automatically open UI when a task starts |
 | `auto_scroll` | `boolean` | `true` | Automatically scroll task panel to show latest output |
+| `keymaps` | `table` | See below | Custom keymaps for UI interactions |
+
+#### UI Keymaps
+
+| Key | Default | Description |
+|-----|---------|-------------|
+| `stop_task` | `'x'` | Stop the selected/current task |
+| `clear_completed` | `'c'` | Clear all completed tasks |
+| `close_ui` | `'q'` | Close the task UI |
+| `toggle_auto_scroll` | `'a'` | Toggle auto-scroll in task panel |
+
+Example:
+```lua
+require('exer').setup({
+  ui = {
+    keymaps = {
+      stop_task = 's',        -- Use 's' instead of 'x' to stop tasks
+      clear_completed = 'd',   -- Use 'd' to clear completed tasks
+      close_ui = '<Esc>',     -- Use Escape to close UI
+      toggle_auto_scroll = 'a' -- Keep default 'a' for auto-scroll
+    }
+  }
+})
+```
 
 ### Other Options
 

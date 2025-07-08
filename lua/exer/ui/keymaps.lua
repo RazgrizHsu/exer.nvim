@@ -3,6 +3,7 @@ local co = require('exer.core')
 local render = require('exer.ui.render')
 local events = require('exer.ui.events')
 local windows = require('exer.ui.windows')
+local config = require('exer.ui.config')
 
 -- Update panel based on current cursor position
 local function updatePanelFromCursor()
@@ -98,8 +99,8 @@ function M.setupListKeymaps(buffer)
   vim.keymap.set('n', 'gg', function() navAndUpdate('gg') end, opts)
   vim.keymap.set('n', 'G', function() navAndUpdate('G') end, opts)
 
-  -- s: Stop selected task
-  vim.keymap.set('n', 's', function()
+  -- Stop selected task
+  vim.keymap.set('n', config.keymaps.stop_task, function()
     local t = render.getSelectedTask()
     if t then
       co.tsk.stop(t.id)
@@ -107,8 +108,8 @@ function M.setupListKeymaps(buffer)
     end
   end, opts)
 
-  -- c: Clear completed tasks
-  vim.keymap.set('n', 'c', function()
+  -- Clear completed tasks
+  vim.keymap.set('n', config.keymaps.clear_completed, function()
     local tskSel = nil
     local focusId = events.getFocusTask()
     if focusId then tskSel = co.tsk.get(focusId) end
@@ -125,8 +126,8 @@ function M.setupListKeymaps(buffer)
     if cleared_count > 0 then co.utils.msg('Cleared ' .. cleared_count .. ' completed tasks') end
   end, opts)
 
-  -- q: Close UI
-  vim.keymap.set('n', 'q', function()
+  -- Close UI
+  vim.keymap.set('n', config.keymaps.close_ui, function()
     local ui = require('exer.ui')
     ui.close()
   end, opts)
@@ -141,8 +142,8 @@ end
 function M.setupPanelKeymaps(buffer)
   local opts = { noremap = true, silent = true, buffer = buffer }
 
-  -- q: Close UI
-  vim.keymap.set('n', 'q', function()
+  -- Close UI
+  vim.keymap.set('n', config.keymaps.close_ui, function()
     local ui = require('exer.ui')
     ui.close()
   end, opts)
@@ -153,8 +154,8 @@ function M.setupPanelKeymaps(buffer)
     ui.close()
   end, opts)
 
-  -- s: Stop current task
-  vim.keymap.set('n', 's', function()
+  -- Stop current task
+  vim.keymap.set('n', config.keymaps.stop_task, function()
     local focusId = events.getFocusTask()
     if focusId then
       co.tsk.stop(focusId)
@@ -163,8 +164,8 @@ function M.setupPanelKeymaps(buffer)
     end
   end, opts)
 
-  -- c: Clear completed tasks
-  vim.keymap.set('n', 'c', function()
+  -- Clear completed tasks
+  vim.keymap.set('n', config.keymaps.clear_completed, function()
     local t = nil
     local focusId = events.getFocusTask()
     if focusId then t = co.tsk.get(focusId) end
@@ -185,8 +186,8 @@ function M.setupPanelKeymaps(buffer)
     end
   end, opts)
 
-  -- a: Toggle auto scroll
-  vim.keymap.set('n', 'a', function()
+  -- Toggle auto scroll
+  vim.keymap.set('n', config.keymaps.toggle_auto_scroll, function()
     local autoScroll = events.toggleAutoScroll()
     co.utils.msg('Auto scroll: ' .. (autoScroll and 'ON' or 'OFF'))
   end, opts)
@@ -201,8 +202,8 @@ end
 function M.setupPlaceholderKeymaps(buffer)
   local opts = { noremap = true, silent = true, buffer = buffer }
 
-  -- q: Close UI
-  vim.keymap.set('n', 'q', function()
+  -- Close UI
+  vim.keymap.set('n', config.keymaps.close_ui, function()
     local ui = require('exer.ui')
     ui.close()
   end, opts)

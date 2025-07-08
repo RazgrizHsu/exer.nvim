@@ -9,5 +9,6 @@ return {
   psr = {
     toml = require('exer.core.psr.toml'),
     treesitter = require('exer.core.psr.treesitter'),
+    editorconfig = require('exer.core.psr.editorconfig'),
   },
 }

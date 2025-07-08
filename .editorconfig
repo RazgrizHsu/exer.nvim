@@ -6,3 +6,8 @@ indent_style = space
 indent_size = 2
 charset = utf-8
 
+[exer.acts]
+id = lua_check
+cmd = lua -l ${name} -e 'print("Module loaded successfully")'
+desc = Check Lua module syntax
+

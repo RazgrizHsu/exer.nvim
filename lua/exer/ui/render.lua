@@ -2,6 +2,7 @@ local M = {}
 local co = require('exer.core')
 local ansi = require('exer.ui.ansi')
 local windows = require('exer.ui.windows')
+local config = require('exer.ui.config')
 
 local function fmtSte(ste)
   local icons = {
@@ -166,9 +167,9 @@ function M.renderPlaceholder(msg)
     '',
     'Keys:',
     '  <Enter> - View task panel',
-    '  s - Stop task',
-    '  c - Clear completed tasks',
-    '  q - Close UI',
+    '  ' .. config.keymaps.stop_task .. ' - Stop task',
+    '  ' .. config.keymaps.clear_completed .. ' - Clear completed tasks',
+    '  ' .. config.keymaps.close_ui .. ' - Close UI',
   }
 
   vim.api.nvim_buf_set_lines(placeholderB, 0, -1, false, lines)
