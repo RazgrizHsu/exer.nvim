@@ -1,12 +1,16 @@
 local M = {}
 
 function M.expandVars(cmd)
+  local co = require('exer.core')
+
   if type(cmd) == 'table' then
     local exp = {}
     for _, c in ipairs(cmd) do
       table.insert(exp, M.expandVars(c))
     end
-    return exp
+    local result = table.concat(exp, ' && ')
+    co.log.debug('[expandVars] Array result: ' .. result, 'VarsDebug')
+    return result
   end
 
   local vars = {

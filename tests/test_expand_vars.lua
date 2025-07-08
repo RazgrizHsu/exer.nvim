@@ -44,10 +44,9 @@ describe('Variable expansion tests', function()
 
   it('expands array commands', function()
     local cmds = proj.expandVars({ 'echo ${file}', 'python ${file}' })
-    assert.are.equal('table', type(cmds))
-    assert.are.equal(2, #cmds)
-    assert.matches('/tmp/test%.py', cmds[1])
-    assert.matches('/tmp/test%.py', cmds[2])
+    assert.are.equal('string', type(cmds))
+    assert.matches('/tmp/test%.py', cmds)
+    assert.matches('&&', cmds)
   end)
 
   it('preserves unknown variables', function()

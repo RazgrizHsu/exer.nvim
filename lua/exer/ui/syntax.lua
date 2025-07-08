@@ -21,20 +21,17 @@ function M.apply(buf)
       syn match RazLogError '\v\c<(error|fail|failed|exception)>\ze(\s|$|[^\w])|✗'
       syn match RazLogDebug '\v\c<(debug|trace)>\ze(\s|$|[^\w])'
 
-      " Highlight exit codes
-      syn match RazLogExitSuccess 'ExitCode: 0'
-      syn match RazLogExitError 'ExitCode: [1-9]\d*'
-
       " Highlight timestamps and durations
       syn match RazLogTime '\v\d+(\.\d+)?[smh](\d+(\.\d+)?[smh])*'
-      syn match RazLogDuration 'Duration: \S\+'
 
-      " Highlight commands and paths
-      syn match RazLogCommand '\v^Command:'
-      syn match RazLogStatus '\v^Status:'
-      syn match RazLogStartTime '\v^StartTime:'
-      syn match RazLogEndTime '\v^EndTime:'
-      syn match RazLogPath '\v[a-zA-Z0-9_.-]+(/[a-zA-Z0-9_.-]+)+' 
+      " Highlight task fields (same styling)
+      syn match RazLogTaskField '\v^(Command|Status|StartTime|EndTime|WorkPath):'
+
+      " Special highlight for Duration and ExitCode
+      syn match RazLogDuration '\v^Duration:'
+      syn match RazLogExitSuccess '\v^ExitCode:\s*0$'
+      syn match RazLogExitError '\v^ExitCode:\s*[1-9]\d*$'
+      syn match RazLogPath '\v[a-zA-Z0-9_.-]+(/[a-zA-Z0-9_.-]+)+'
       syn match RazLogPath '\v/[^ ]*'
       syn match RazLogSeparator '^─\+$'
 
@@ -59,10 +56,7 @@ function M.apply(buf)
       hi default link RazLogExitError ErrorMsg
       hi default link RazLogTime Number
       hi default link RazLogDuration Special
-      hi default link RazLogCommand Keyword
-      hi default link RazLogStatus Keyword
-      hi default link RazLogStartTime Keyword
-      hi default link RazLogEndTime Keyword
+      hi default link RazLogTaskField Keyword
       hi default link RazLogPath Directory
       hi default link RazLogSeparator Comment
       hi default link RazLogOutput Title

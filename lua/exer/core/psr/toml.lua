@@ -358,6 +358,42 @@ function M.parseArrayOfTables(content, name)
           else
             curItm[key] = parseVar(multilineVal)
           end
+        -- Handle multiline arrays
+        elseif val:match('^%[') and not val:match('%]$') then
+          -- Start of multiline array
+          local multilineVal = val
+          local bracketCnt = 1
+
+          -- Continue reading lines until we find the closing bracket
+          for j = i + 1, #lines do
+            local nextLine = trim(lines[j])
+            if nextLine == '' or nextLine:match('^#') then goto continue_multiline_array end
+
+            multilineVal = multilineVal .. ' ' .. nextLine
+
+            -- Count brackets to find the end
+            for k = 1, #nextLine do
+              local char = nextLine:sub(k, k)
+              if char == '[' then
+                bracketCnt = bracketCnt + 1
+              elseif char == ']' then
+                bracketCnt = bracketCnt - 1
+                if bracketCnt == 0 then
+                  i = j -- Update line position
+                  break
+                end
+              end
+            end
+
+            if bracketCnt == 0 then break end
+            ::continue_multiline_array::
+          end
+
+          if multilineVal:match('^%[.*%]$') then
+            curItm[key] = parseArrayStrs(multilineVal)
+          else
+            curItm[key] = parseVar(multilineVal)
+          end
         elseif val:match('^%[.*%]$') then
           curItm[key] = parseArrayStrs(val)
         elseif val:match('^%{.*%}$') then

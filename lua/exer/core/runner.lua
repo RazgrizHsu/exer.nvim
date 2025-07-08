@@ -10,7 +10,11 @@ local defaults = {
 function M.run(config)
   local cfg = vim.tbl_extend('force', defaults, config)
 
-  if cfg.cmds then cfg.cmd = cfg.cmds:build() end
+  if cfg.cmds then
+    cfg.cmd = cfg.cmds:build()
+    -- Extract cwd from cmds if not already set
+    if not cfg.cwd and cfg.cmds.cwd then cfg.cwd = cfg.cmds.cwd end
+  end
 
   local taskCfg = {
     cmd = cfg.cmd,

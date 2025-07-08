@@ -116,12 +116,31 @@ function M.renderPanel(tid, autoScroll)
   local icon = fmtSte(t.status)
   table.insert(lines, string.format('%s─Task #%d: %s', icon, t.id, t.name))
   table.insert(lines, '─────────────────────────────────────────')
-  table.insert(lines, 'Command: ' .. t.cmd)
-  table.insert(lines, 'Status: ' .. t.status)
-  if t.startTime then table.insert(lines, 'StartTime: ' .. fmtTime(t.startTime)) end
-  if t.endTime then table.insert(lines, 'EndTime: ' .. fmtTime(t.endTime)) end
-  if t.startTime then table.insert(lines, 'Duration: ' .. fmtDur(t.startTime, t.endTime)) end
-  if t.exitCode then table.insert(lines, 'ExitCode: ' .. t.exitCode) end
+
+  -- Calculate alignment width for field values
+  local fields = {}
+  if t.cwd then table.insert(fields, { 'WorkPath', t.cwd }) end
+  table.insert(fields, { 'Command', t.cmd })
+  table.insert(fields, { 'Status', t.status })
+  if t.startTime then table.insert(fields, { 'StartTime', fmtTime(t.startTime) }) end
+  if t.endTime then table.insert(fields, { 'EndTime', fmtTime(t.endTime) }) end
+  if t.startTime then table.insert(fields, { 'Duration', fmtDur(t.startTime, t.endTime) }) end
+  if t.exitCode then table.insert(fields, { 'ExitCode', tostring(t.exitCode) }) end
+
+  -- Find max label width
+  local maxLabelWidth = 0
+  for _, field in ipairs(fields) do
+    local labelWidth = #field[1]
+    if labelWidth > maxLabelWidth then maxLabelWidth = labelWidth end
+  end
+
+  -- Add aligned field lines
+  for _, field in ipairs(fields) do
+    local label = field[1]
+    local value = field[2]
+    local padding = string.rep(' ', maxLabelWidth - #label)
+    table.insert(lines, label .. ':' .. padding .. ' ' .. value)
+  end
   table.insert(lines, '')
   table.insert(lines, 'Output:')
   table.insert(lines, '─────────────────────────────────────────')

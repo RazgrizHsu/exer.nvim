@@ -26,6 +26,7 @@ function M.mk(name, cmd, optsJob)
     exitCode = nil,
     jobId = nil,
     opts = optsJob or {},
+    cwd = optsJob and optsJob.cwd or vim.fn.getcwd(),
     stderrIsOutput = optsJob and optsJob.useErrAsOut or false, -- some tools use stderr as normal output
   }
   tsks[t.id] = t
