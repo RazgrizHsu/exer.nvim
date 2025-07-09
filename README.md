@@ -136,6 +136,49 @@ Install with your favorite package manager:
 |--------|------|---------|-------------|
 | `debug` | `boolean` | `false` | Enable debug logging |
 | `disable_default_keymaps` | `boolean` | `false` | Disable all default keymaps |
+| `config_files` | `array` | `nil` | Custom config file search list (see below) |
+
+#### Custom Config Files
+
+By default, exer.nvim searches for configuration files in this order:
+1. `proj.toml`
+2. `exec.toml`
+3. `exec.json`
+4. `.exec.toml`
+5. `.exec.json`
+6. `.exec`
+7. `.editorconfig` (with `[exer]` section)
+8. `pyproject.toml` (with `[tool.exec]` section)
+9. `Cargo.toml` (with `[package.metadata.exec]` section)
+10. `package.json` (with `exec` field)
+
+You can override this behavior by specifying your own search list:
+
+```lua
+require('exer').setup({
+  config_files = {
+    "my-tasks.toml",                    -- TOML format
+    "my-tasks.json",                    -- JSON format
+    "config/exec.toml",                 -- Subdirectory
+    ".my-exec",                         -- Hidden file
+    "/absolute/path/tasks.json",        -- Absolute path
+    {
+      path = "Cargo.toml",
+      section = "package.metadata.exec"
+    },                                  -- Embedded config
+    {
+      path = "pyproject.toml",
+      section = "tool.exec"
+    }
+  }
+})
+```
+
+**Options:**
+- **String format**: Relative paths are resolved from project root
+- **Table format**: Use `path` and `section` for embedded configurations
+- **Search order**: Files are searched in the order specified
+- **Absolute paths**: Use `/` prefix for absolute paths
 
 ### UI Configuration
 
@@ -157,9 +200,10 @@ Install with your favorite package manager:
 | `toggle_auto_scroll` | `'a'` | Toggle auto-scroll in task panel |
 
 
-### Project Configuration (exec.toml)
 
-exer.nvim supports project-specific task configuration through an `exec.toml` file in your project root.
+### Project Configuration
+
+exer.nvim supports project-specific task configuration through configuration files in your project root. Both TOML and JSON formats are supported.
 
 #### Variable System
 
@@ -183,21 +227,24 @@ Use `${variable}` syntax in commands:
 **System Variables**
 - `${servername}` - Vim/Neovim server name
 
+
+
 #### Basic Task Configuration
 
+**TOML Format (exec.toml):**
 ```toml
 [exer]
 # Single command tasks
 acts = [
-  { 
-    id = "run", 
-    cmd = "python ${file}", 
+  {
+    id = "run",
+    cmd = "python ${file}",
     desc = "Run Python file",
     when = "python"  # Only show for Python files
   },
-  { 
-    id = "compile", 
-    cmd = "gcc ${name}.c -o ${name}", 
+  {
+    id = "compile",
+    cmd = "gcc ${name}.c -o ${name}",
     desc = "Compile C file",
     when = "c",
     cwd = "build"    # Execute in build directory
@@ -215,41 +262,56 @@ desc = "Build and run C program"
 env = { DEBUG = "1", CC = "clang" }  # Environment variables
 ```
 
-#### Application Configuration
-
-```toml
-# Define applications with build and run configurations
-[[apps]]
-name = "hello_world"
-entry = "src/main.c"
-output = "dist/hello"
-type = "binary"          # binary, class, jar, script
-files = ["src/*.c", "src/*.h"]
-build_args = ["-Wall", "-O2"]
-run_args = ["--verbose"]
+**JSON Format (exec.json):**
+```json
+{
+  "exer": {
+    "acts": [
+      {
+        "id": "run",
+        "cmd": "python ${file}",
+        "desc": "Run Python file",
+        "when": "python"
+      },
+      {
+        "id": "compile",
+        "cmd": "gcc ${name}.c -o ${name}",
+        "desc": "Compile C file",
+        "when": "c",
+        "cwd": "build"
+      },
+      {
+        "id": "build_and_run",
+        "cmd": [
+          "gcc ${name}.c -o ${name}",
+          "./${name}"
+        ],
+        "desc": "Build and run C program",
+        "env": {
+          "DEBUG": "1",
+          "CC": "clang"
+        }
+      }
+    ]
+  }
+}
 ```
+
 
 #### Configuration Options
 
 **Task Options (acts)**
 - `id` - Unique task identifier (required)
 - `cmd` - Command string or array (required)
-- `desc` - Task description 
+- `desc` - Task description
 - `when` - Filetype condition
 - `cwd` - Working directory
 - `env` - Environment variables
 
-**Application Options (apps)**
-- `name` - Application name (required)
-- `entry` - Entry file path (required)
-- `output` - Output file path (required)
-- `type` - Application type: binary, class, jar, script
-- `files` - Related files (glob patterns)
-- `build_args` - Compiler arguments
-- `run_args` - Runtime arguments
 
 #### Complete Example
 
+**TOML Format:**
 ```toml
 [exer]
 # Language-specific tasks
@@ -281,22 +343,53 @@ desc = "Clean build artifacts"
 id = "test_all"
 cmd = ["npm test", "go test ./...", "pytest"]
 desc = "Run all tests"
-
-# Application definitions
-[[apps]]
-name = "my_server"
-entry = "cmd/server/main.go"
-output = "bin/server"
-type = "binary"
-build_args = ["-ldflags", "-s -w"]
-run_args = ["--port", "8080"]
-
-[[apps]]
-name = "my_cli"
-entry = "cmd/cli/main.go"
-output = "bin/cli"
-type = "binary"
 ```
+
+**JSON Format:**
+```json
+{
+  "exer": {
+    "acts": [
+      {
+        "id": "run_py",
+        "cmd": "python ${file}",
+        "desc": "Run Python",
+        "when": "python"
+      },
+      {
+        "id": "test_py",
+        "cmd": "pytest ${file} -v",
+        "desc": "Test Python",
+        "when": "python"
+      },
+      {
+        "id": "run_js",
+        "cmd": "node ${file}",
+        "desc": "Run JS",
+        "when": "javascript"
+      },
+      {
+        "id": "compile_c",
+        "cmd": "gcc ${file} -o ${name}",
+        "desc": "Compile C",
+        "when": "c"
+      },
+      {
+        "id": "clean",
+        "cmd": "rm -rf build dist",
+        "desc": "Clean build artifacts"
+      },
+      {
+        "id": "test_all",
+        "cmd": ["npm test", "go test ./...", "pytest"],
+        "desc": "Run all tests"
+      }
+    ]
+  }
+}
+```
+
+
 
 ## Developer Notes
 

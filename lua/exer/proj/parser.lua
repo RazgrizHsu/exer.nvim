@@ -130,7 +130,36 @@ function M.parseExer(cnt)
   return rst
 end
 
+-- Parse JSON format
+function M.parseJson(cnt)
+  if not cnt or cnt == '' then return nil end
+
+  local ok, json = pcall(vim.fn.json_decode, cnt)
+  if not ok or not json then return nil end
+
+  local rst = { acts = {}, apps = {}, compilers = {} }
+
+  -- Parse exer section
+  if json.exer then
+    rst.acts = json.exer.acts or {}
+    rst.apps = json.exer.apps or {}
+    rst.compilers = json.exer.compilers or {}
+  end
+
+  -- Support root-level acts and apps for simple cases
+  if json.acts and not json.exer then rst.acts = json.acts end
+  if json.apps and not json.exer then rst.apps = json.apps end
+
+  return rst
+end
+
 -- Main parse function
-function M.parse(cnt) return M.parseExer(cnt) end
+function M.parse(cnt, fileType)
+  if fileType == 'json' then
+    return M.parseJson(cnt)
+  else
+    return M.parseExer(cnt)
+  end
+end
 
 return M

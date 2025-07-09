@@ -120,12 +120,92 @@ function M.makeFakeVim()
           return expr
         end
       end,
-      json_decode = function(str) return {} end,
+      json_decode = function(str)
+        -- Simple JSON parser for testing
+        if not str or str == '' then return {} end
+
+        -- Try to use a simple JSON parser
+        local ok, result = pcall(function()
+          -- Remove whitespace and newlines
+          str = str:gsub('%s+', ' '):gsub('^ ', ''):gsub(' $', '')
+
+          -- Very basic JSON parsing (only for test cases)
+          if str == '{}' then return {} end
+
+          -- Try to parse simple structures
+          if str:match('^{.*}$') then
+            local obj = {}
+
+            -- Parse "exer" field
+            local exer_match = str:match('"exer"%s*:%s*{(.-)}"?%s*}$')
+            if exer_match then
+              obj.exer = {}
+
+              -- Parse acts array
+              local acts_match = exer_match:match('"acts"%s*:%s*%[(.-)%]')
+              if acts_match then
+                obj.exer.acts = {}
+                local act_pattern = '{([^}]*)}'
+                for act_str in acts_match:gmatch(act_pattern) do
+                  local act = {}
+                  for key, value in act_str:gmatch('"([^"]+)"%s*:%s*"([^"]*)"') do
+                    act[key] = value
+                  end
+                  table.insert(obj.exer.acts, act)
+                end
+              end
+
+              -- Parse apps array
+              local apps_match = exer_match:match('"apps"%s*:%s*%[(.-)%]')
+              if apps_match then
+                obj.exer.apps = {}
+                local app_pattern = '{([^}]*)}'
+                for app_str in apps_match:gmatch(app_pattern) do
+                  local app = {}
+                  for key, value in app_str:gmatch('"([^"]+)"%s*:%s*"([^"]*)"') do
+                    app[key] = value
+                  end
+                  table.insert(obj.exer.apps, app)
+                end
+              end
+
+              -- Parse compilers object
+              local compilers_match = exer_match:match('"compilers"%s*:%s*{(.-)}"?')
+              if compilers_match then
+                obj.exer.compilers = {} -- This is a simplified parser, won't handle nested objects perfectly
+                -- But good enough for basic testing
+              end
+            end
+
+            -- Parse root-level acts
+            local root_acts = str:match('"acts"%s*:%s*%[(.-)%]')
+            if root_acts and not obj.exer then
+              obj.acts = {}
+              local act_pattern = '{([^}]*)}'
+              for act_str in root_acts:gmatch(act_pattern) do
+                local act = {}
+                for key, value in act_str:gmatch('"([^"]+)"%s*:%s*"([^"]*)"') do
+                  act[key] = value
+                end
+                table.insert(obj.acts, act)
+              end
+            end
+
+            return obj
+          end
+
+          return {}
+        end)
+
+        return ok and result or {}
+      end,
+      maparg = function(lhs, mode, abbr, dict) return '' end,
     },
     api = {
       nvim_buf_get_name = function(ids) return '/tmp/test.py' end,
       nvim_command = function() end,
       nvim_set_current_dir = function(dir) end,
+      nvim_set_keymap = function(mode, lhs, rhs, opts) end,
       nvim_get_option_value = function(opt, ctx)
         if opt == 'filetype' then return 'py' end
         return ''
@@ -159,6 +239,19 @@ function M.makeFakeVim()
         table.insert(list1, item)
       end
       return list1
+    end,
+    tbl_deep_extend = function(behavior, ...)
+      local result = {}
+      for _, tbl in ipairs({ ... }) do
+        for k, v in pairs(tbl) do
+          if type(v) == 'table' and type(result[k]) == 'table' then
+            result[k] = vim.tbl_deep_extend('force', result[k], v)
+          else
+            result[k] = v
+          end
+        end
+      end
+      return result
     end,
   }
 

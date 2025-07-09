@@ -47,7 +47,14 @@ local function onAutoCmdTsk(args)
   if pattern == 'RazTaskComplete' then
     if args.data and args.data.tskId == state.focusId then
       local tid = state.focusId
-      vim.defer_fn(function() refreshPanel(tid, true) end, 500)
+      -- Don't auto-focus on task completion, just update panel content
+      vim.defer_fn(function()
+        if not windows.isValid('panel') then
+          local ui = require('exer.ui')
+          ui.showList(true)
+        end
+        render.renderPanel(tid, state.autoScroll)
+      end, 500)
     end
     return
   end

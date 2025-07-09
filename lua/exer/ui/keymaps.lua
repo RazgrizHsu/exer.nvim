@@ -6,11 +6,11 @@ local windows = require('exer.ui.windows')
 local config = require('exer.ui.config')
 
 -- Update panel based on current cursor position
-local function updatePanelFromCursor()
+local function updatePanelFromCursor(skipFocus)
   local t = render.getSelectedTask()
   if t then
     events.setFocusTask(t.id)
-    events.showTaskPanel(t.id)
+    if not skipFocus then events.showTaskPanel(t.id) end
     if windows.isValidBuf('panel') then render.renderPanel(t.id, events.getAutoScroll()) end
   end
   -- if no task is selected, keep current panel state unchanged
@@ -105,6 +105,7 @@ function M.setupListKeymaps(buffer)
     if t then
       co.tsk.stop(t.id)
       render.renderList()
+      updatePanelFromCursor(true) -- Skip focus change
     end
   end, opts)
 
@@ -130,6 +131,17 @@ function M.setupListKeymaps(buffer)
   vim.keymap.set('n', config.keymaps.close_ui, function()
     local ui = require('exer.ui')
     ui.close()
+  end, opts)
+
+  -- Tab: Switch to panel
+  vim.keymap.set('n', '<Tab>', function()
+    if windows.isValid('panel') then windows.focus('panel') end
+  end, opts)
+
+  -- Mouse click: Update panel content
+  vim.keymap.set('n', '<LeftMouse>', function()
+    vim.cmd('normal! <LeftMouse>')
+    updatePanelFromCursor()
   end, opts)
 
   -- Smart navigation
@@ -190,6 +202,11 @@ function M.setupPanelKeymaps(buffer)
   vim.keymap.set('n', config.keymaps.toggle_auto_scroll, function()
     local autoScroll = events.toggleAutoScroll()
     co.utils.msg('Auto scroll: ' .. (autoScroll and 'ON' or 'OFF'))
+  end, opts)
+
+  -- Tab: Switch to list
+  vim.keymap.set('n', '<Tab>', function()
+    if windows.isValid('list') then windows.focus('list') end
   end, opts)
 
   -- Smart navigation

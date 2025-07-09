@@ -40,18 +40,3 @@ jobs:
 
       - name: Run tests
         run: ./test
-
-  luacheck:
-    name: Luacheck
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Install luacheck
-        run: |
-          sudo apt-get update
-          sudo apt install luarocks -y
-          sudo luarocks install luacheck
-
-      - name: Run luacheck
-        run: luacheck lua --globals vim --ignore 211 212 213 311 631

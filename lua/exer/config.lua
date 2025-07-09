@@ -3,6 +3,7 @@ local M = {}
 local defaults = {
   debug = false,
   disable_default_keymaps = false,
+  config_files = nil,
   ui = {
     height = 0.3,
     list_width = 36,

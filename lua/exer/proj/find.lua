@@ -37,24 +37,57 @@ local function checkEmbedCfg(filePath, sec)
   elseif filePath:match('package%.json$') then
     local ok, json = pcall(vim.fn.json_decode, fileCnt)
     if ok and json and json.exec then return filePath end
+  elseif filePath:match('%.json$') then
+    local ok, json = pcall(vim.fn.json_decode, fileCnt)
+    if ok and json and (json.exer or json.acts or json.apps) then return filePath end
   end
 
   return nil
 end
 
+local function getDefaultCfgFiles(rt)
+  return {
+    { path = rt .. '/proj.toml' },
+    { path = rt .. '/proj.', sec = 'exer' },
+    { path = rt .. '/exer.toml' },
+    { path = rt .. '/exer.json', sec = 'exer' },
+    { path = rt .. '/.exer.toml' },
+    { path = rt .. '/.exer.json', sec = 'exer' },
+    { path = rt .. '/.exer' },
+    { path = rt .. '/.editorconfig', sec = 'exer' },
+    { path = rt .. '/pyproject.toml', sec = 'tool.exer' },
+    { path = rt .. '/Cargo.toml', sec = 'package.metadata.exer' },
+    { path = rt .. '/package.json', sec = 'exer' },
+  }
+end
+
+local function getUserCfgFiles(rt, userCfgs)
+  local cfgFs = {}
+
+  for _, cfg in ipairs(userCfgs) do
+    if type(cfg) == 'string' then
+      local path = cfg:sub(1, 1) == '/' and cfg or rt .. '/' .. cfg
+      table.insert(cfgFs, { path = path })
+    elseif type(cfg) == 'table' and cfg.path then
+      local path = cfg.path:sub(1, 1) == '/' and cfg.path or rt .. '/' .. cfg.path
+      table.insert(cfgFs, { path = path, sec = cfg.section })
+    end
+  end
+
+  return cfgFs
+end
+
 function M.find()
   local rt = co.io.getRoot()
+  local config = require('exer.config')
+  local opts = config.get()
 
-  local cfgFs = {
-    { path = rt .. '/proj.toml' },
-    { path = rt .. '/exec.toml' },
-    { path = rt .. '/.exec.toml' },
-    { path = rt .. '/.exec' },
-    { path = rt .. '/.editorconfig', sec = 'exer' },
-    { path = rt .. '/pyproject.toml', sec = 'tool.exec' },
-    { path = rt .. '/Cargo.toml', sec = 'package.metadata.exec' },
-    { path = rt .. '/package.json', sec = 'exec' },
-  }
+  local cfgFs
+  if opts.config_files and type(opts.config_files) == 'table' then
+    cfgFs = getUserCfgFiles(rt, opts.config_files)
+  else
+    cfgFs = getDefaultCfgFiles(rt)
+  end
 
   for _, cfg in ipairs(cfgFs) do
     if cfg.sec then
@@ -73,7 +106,7 @@ function M.getCfgType(filePath)
 
   local fname = vim.fn.fnamemodify(filePath, ':t')
 
-  if fname == 'exec.toml' or fname == '.exec.toml' or fname == '.exec' then
+  if fname == 'exer.toml' or fname == '.exer.toml' or fname == '.exer' or fname == 'proj.toml' or fname == 'exer.json' or fname == '.exer.json' then
     return 'standalone'
   elseif fname == 'pyproject.toml' or fname == 'Cargo.toml' or fname == 'package.json' or fname == '.editorconfig' then
     return 'embedded'

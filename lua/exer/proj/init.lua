@@ -54,7 +54,8 @@ function M.load()
       co.log.debug('[proj] No exer content found in .editorconfig')
     end
   else
-    cfg = M.parse(fileCnt)
+    local fileType = cfgPath:match('%.json$') and 'json' or 'toml'
+    cfg = M.parse(fileCnt, fileType)
   end
 
   if not cfg then return { acts = {}, apps = {} } end
@@ -67,7 +68,7 @@ end
 
 function M.findCfg() return fnd.find() end
 
-function M.parse(cnt) return psr.parse(cnt) end
+function M.parse(cnt, fileType) return psr.parse(cnt, fileType) end
 
 function M.filterActs(acts, ft)
   if not acts or #acts == 0 then return {} end
