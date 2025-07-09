@@ -33,29 +33,69 @@ function M.filterOpts()
       if ste.query == '' then table.insert(ste.filteredOpts, opt) end
     else
       displayNum = displayNum + 1
-      local text = (opt.text):lower():gsub('%s+', '')
-      local queryLower = ste.query:lower():gsub('%s+', '')
+      local text = (opt.text or ''):lower():gsub('%s+', '')
+      local typeStr = (opt.type or ''):lower():gsub('%s+', '')
+      local nameStr = (opt.name or ''):lower():gsub('%s+', '')
+      local descStr = (opt.desc or ''):lower():gsub('%s+', '')
+      local qlow = ste.query:lower():gsub('%s+', '')
       local itemNum = tostring(displayNum)
 
-      if queryLower == '' then
+      if qlow == '' then
         local optCopy = vim.tbl_deep_extend('force', opt, {})
         optCopy.originalNum = displayNum
         table.insert(ste.filteredOpts, optCopy)
       else
-        local exactMatch = text:find(queryLower, 1, true)
-        local fuzzyMatched, fuzzyMatches = fuzzyMatch(text, queryLower)
-        local numMatch = itemNum:find(queryLower, 1, true)
+        local emTxt = text:find(qlow, 1, true)
+        local exTyp = typeStr:find(qlow, 1, true)
+        local emNam = nameStr:find(qlow, 1, true)
+        local emDsc = descStr:find(qlow, 1, true)
+        local fmTxt, fmsTxt = fuzzyMatch(text, qlow)
+        local fmTyp, fmsTyp = fuzzyMatch(typeStr, qlow)
+        local fmNam, fmsNam = fuzzyMatch(nameStr, qlow)
+        local fmDsc, fmsDsc = fuzzyMatch(descStr, qlow)
+        local numMatch = itemNum:find(qlow, 1, true)
 
-        if exactMatch or fuzzyMatched or numMatch then
+        local hasExactMatch = emTxt or exTyp or emNam or emDsc
+        local hasFuzzyMatch = fmTxt or fmTyp or fmNam or fmDsc
+
+        if hasExactMatch or hasFuzzyMatch or numMatch then
           local filteredOpt = vim.tbl_deep_extend('force', opt, {})
           filteredOpt.originalNum = displayNum
-          if exactMatch then
+
+          if hasExactMatch then
             filteredOpt.matchType = 'exact'
-            filteredOpt.matchStart = exactMatch
-            filteredOpt.matchEnd = exactMatch + #queryLower - 1
-          elseif fuzzyMatched then
+            if emTxt then
+              filteredOpt.matchField = 'text'
+              filteredOpt.matchStart = emTxt
+              filteredOpt.matchEnd = emTxt + #qlow - 1
+            elseif exTyp then
+              filteredOpt.matchField = 'type'
+              filteredOpt.matchStart = exTyp + 1
+              filteredOpt.matchEnd = exTyp + #qlow - 0
+            elseif emNam then
+              filteredOpt.matchField = 'name'
+              filteredOpt.matchStart = emNam + 1
+              filteredOpt.matchEnd = emNam + #qlow - 0
+            elseif emDsc then
+              filteredOpt.matchField = 'desc'
+              filteredOpt.matchStart = emDsc + 1
+              filteredOpt.matchEnd = emDsc + #qlow - 0
+            end
+          elseif hasFuzzyMatch then
             filteredOpt.matchType = 'fuzzy'
-            filteredOpt.matchPositions = fuzzyMatches
+            if fmTxt then
+              filteredOpt.matchField = 'text'
+              filteredOpt.matchPositions = fmsTxt
+            elseif fmTyp then
+              filteredOpt.matchField = 'type'
+              filteredOpt.matchPositions = fmsTyp
+            elseif fmNam then
+              filteredOpt.matchField = 'name'
+              filteredOpt.matchPositions = fmsNam
+            elseif fmDsc then
+              filteredOpt.matchField = 'desc'
+              filteredOpt.matchPositions = fmsDsc
+            end
           elseif numMatch then
             filteredOpt.matchType = 'number'
           end

@@ -52,8 +52,10 @@ function M:addLang(text, value, name, typeStr)
 end
 
 function M:addUtil(text, value, name, typeStr)
+  local displayText = text
+  if name then displayText = name .. ': ' .. text end
   table.insert(self.items, {
-    text = text,
+    text = displayText,
     value = value,
     type = typeStr or 'Util',
     name = name,

@@ -143,35 +143,50 @@ local function renderList()
     local opt = lineToOptMap[lineIdx]
 
     if opt and opt.matchType and ste.query ~= '' then
-      local textStart = line:find(opt.text, 1, true)
-      if textStart then
-        local queryLower = ste.query:lower():gsub('%s+', '')
-        local textLower = opt.text:lower():gsub('%s+', '')
+      local function findFieldInLine(fieldName, fieldValue)
+        if fieldName == 'text' then
+          return line:find(fieldValue, 1, true)
+        elseif fieldName == 'type' then
+          return 4
+        elseif fieldName == 'name' then
+          local nameInText = line:find(fieldValue, 1, true)
+          if nameInText then return 11 end
+        elseif fieldName == 'desc' then
+          local descPos = line:find(' %- ')
+          if descPos then return descPos + 3 end
+        end
+        return nil
+      end
 
-        if opt.matchType == 'exact' then
-          local matchStart = textStart + opt.matchStart - 1 - 1
-          local matchEnd = textStart + opt.matchEnd - 1
+      if opt.matchType == 'exact' and opt.matchField then
+        local fieldStart = findFieldInLine(opt.matchField, opt[opt.matchField] or '')
+        if fieldStart then
+          local matchStart = fieldStart + opt.matchStart - 1 - 1
+          local matchEnd = fieldStart + opt.matchEnd - 1
           vim.api.nvim_buf_set_extmark(ste.listBuf, matchNs, lineNumber, matchStart, {
             end_col = matchEnd,
             hl_group = 'IncSearch',
           })
-        elseif opt.matchType == 'fuzzy' and opt.matchPositions then
+        end
+      elseif opt.matchType == 'fuzzy' and opt.matchPositions and opt.matchField then
+        local fieldStart = findFieldInLine(opt.matchField, opt[opt.matchField] or '')
+        if fieldStart then
           for _, pos in ipairs(opt.matchPositions) do
-            local actualPos = textStart + pos - 1 - 1
+            local actualPos = fieldStart + pos - 1 - 1
             vim.api.nvim_buf_set_extmark(ste.listBuf, matchNs, lineNumber, actualPos, {
               end_col = actualPos + 1,
               hl_group = 'Search',
             })
           end
-        elseif opt.matchType == 'number' then
-          local numStart = line:find('%d+')
-          if numStart then
-            local numEnd = line:find('%D', numStart) or #line + 1
-            vim.api.nvim_buf_set_extmark(ste.listBuf, matchNs, lineNumber, numStart - 1, {
-              end_col = numEnd - 1,
-              hl_group = 'WarningMsg',
-            })
-          end
+        end
+      elseif opt.matchType == 'number' then
+        local numStart = line:find('%d+')
+        if numStart then
+          local numEnd = line:find('%D', numStart) or #line + 1
+          vim.api.nvim_buf_set_extmark(ste.listBuf, matchNs, lineNumber, numStart - 1, {
+            end_col = numEnd - 1,
+            hl_group = 'WarningMsg',
+          })
         end
       end
     end
