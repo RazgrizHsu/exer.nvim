@@ -4,18 +4,18 @@ local json = co.psr.json
 
 local function checkEmbedCfg(filePath, sec)
   if not co.io.fileExists(filePath) then
-    co.log.debug('[find] File does not exist: ' .. filePath)
+    co.lg.debug('[find] File does not exist: ' .. filePath)
     return nil
   end
 
   local cnt = vim.fn.readfile(filePath)
   if not cnt or #cnt == 0 then
-    co.log.debug('[find] File is empty: ' .. filePath)
+    co.lg.debug('[find] File is empty: ' .. filePath)
     return nil
   end
 
   local fileCnt = table.concat(cnt, '\n')
-  co.log.debug('[find] Checking embedded config in: ' .. filePath)
+  co.lg.debug('[find] Checking embedded config in: ' .. filePath)
 
   if filePath:match('%.toml$') then
     local secPat = '%[' .. sec:gsub('%.', '%%.') .. '%]'
@@ -28,12 +28,12 @@ local function checkEmbedCfg(filePath, sec)
     end
   elseif filePath:match('%.editorconfig$') then
     -- Check for [exer], [exer.acts], or [[exer.acts]] sections
-    co.log.debug('[find] Checking .editorconfig content')
+    co.lg.debug('[find] Checking .editorconfig content')
     if fileCnt:match('%[exer%]') or fileCnt:match('%[exer%.acts%]') or fileCnt:match('%[%[exer%.acts%]%]') then
-      co.log.debug('[find] Found exer section in .editorconfig')
+      co.lg.debug('[find] Found exer section in .editorconfig')
       return filePath
     else
-      co.log.debug('[find] No exer section found in .editorconfig')
+      co.lg.debug('[find] No exer section found in .editorconfig')
     end
   elseif filePath:match('package%.json$') then
     local ok, data = pcall(json.decode, fileCnt)

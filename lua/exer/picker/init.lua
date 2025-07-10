@@ -35,7 +35,7 @@ end
 function M.show()
   local co = require('exer.core')
 
-  co.log.debug('=== UI PICKER OPENED ===', 'Picker')
+  co.lg.debug('=== UI PICKER OPENED ===', 'Picker')
 
   local uv = vim.uv
   if uv.os_homedir() == uv.cwd() then
@@ -52,14 +52,14 @@ function M.show()
   local buf = vim.api.nvim_get_current_buf()
   local ft = vim.api.nvim_get_option_value('filetype', { buf = buf })
 
-  co.log.debug('Current file: ' .. fileCur, 'Picker')
-  co.log.debug('Current filetype: ' .. (ft or 'nil'), 'Picker')
+  co.lg.debug('Current file: ' .. fileCur, 'Picker')
+  co.lg.debug('Current filetype: ' .. (ft or 'nil'), 'Picker')
 
   local optsLang = {}
 
   -- add proj tasks (highest priority)
   local projActs = proj.getActs(ft)
-  co.log.debug('Found ' .. #projActs .. ' proj tasks', 'Picker')
+  co.lg.debug('Found ' .. #projActs .. ' proj tasks', 'Picker')
 
   local validProjCount = 0
   for _, act in ipairs(projActs) do
@@ -77,16 +77,16 @@ function M.show()
           act = act,
         })
       else
-        co.log.debug(string.format('Skipping proj act with invalid cmd: %s', act.id), 'Picker')
+        co.lg.debug(string.format('Skipping proj act with invalid cmd: %s', act.id), 'Picker')
       end
     end
   end
 
-  co.log.debug(string.format('Added %d valid proj tasks out of %d', validProjCount, #projActs), 'Picker')
+  co.lg.debug(string.format('Added %d valid proj tasks out of %d', validProjCount, #projActs), 'Picker')
 
   -- add module tasks (languages, build tools and test frameworks)
   local optsMods = mods.getOpts(ft)
-  co.log.debug('Found ' .. #optsMods .. ' mods options', 'Picker')
+  co.lg.debug('Found ' .. #optsMods .. ' mods options', 'Picker')
 
   -- add separator only if both proj tasks and mod tasks exist
   if #projActs > 0 and #optsMods > 0 then table.insert(optsLang, { text = '', value = 'separator' }) end
@@ -95,7 +95,7 @@ function M.show()
     table.insert(optsLang, item)
   end
 
-  co.log.debug('Total options available: ' .. #optsLang, 'Picker')
+  co.lg.debug('Total options available: ' .. #optsLang, 'Picker')
 
   -- 過濾掉任何可能的 nil 或無效項目
   local finalOpts = {}

@@ -48,13 +48,13 @@ local function parseJestCfg(path)
       end
 
       if #mths > 0 then
-        co.log.debug('Regex parsed testMatch: ' .. vim.inspect(mths), 'Regex Parse Success')
+        co.lg.debug('Regex parsed testMatch: ' .. vim.inspect(mths), 'Regex Parse Success')
         return mths
       end
     end
 
     local cmd = string.format('npx ts-node -e "const cfg = require(\'%s\'); const config = cfg.config || cfg.default || cfg; console.log(JSON.stringify(config.testMatch || null))"', path)
-    co.log.info('Using ts-node fallback...', 'Fallback to ts-node')
+    co.lg.info('Using ts-node fallback...', 'Fallback to ts-node')
     local rst = vim.fn.system(cmd)
 
     if vim.v.shell_error == 0 then
@@ -66,7 +66,7 @@ local function parseJestCfg(path)
     end
   end
 
-  co.log.warn('Failed to parse Jest config', 'Jest Parse Failed')
+  co.lg.warn('Failed to parse Jest config', 'Jest Parse Failed')
   return nil
 end
 
@@ -76,19 +76,19 @@ local function isTestFileByCfg(pathF, testMatch)
   local pathAbs = vim.fn.fnamemodify(pathF, ':p')
   local dirRoot = vim.fn.getcwd()
 
-  co.log.debug('Checking file: ' .. pathAbs, 'File Check')
-  co.log.debug('Root dir: ' .. dirRoot, 'Root Dir')
+  co.lg.debug('Checking file: ' .. pathAbs, 'File Check')
+  co.lg.debug('Root dir: ' .. dirRoot, 'Root Dir')
 
   for _, pattern in ipairs(testMatch) do
-    co.log.debug('Testing pattern: ' .. pattern, 'Pattern')
+    co.lg.debug('Testing pattern: ' .. pattern, 'Pattern')
 
     local isNegative = pattern:match('^!')
     local pathRel = pathAbs:gsub('^' .. vim.pesc(dirRoot .. '/'), '')
 
-    co.log.debug('Relative path: ' .. pathRel, 'Relative')
+    co.lg.debug('Relative path: ' .. pathRel, 'Relative')
 
     if pathRel:match('^tests/') and pathRel:match('%.ts$') and not pathRel:match('%.d%.ts$') then
-      co.log.debug('Match found!', 'Match Success')
+      co.lg.debug('Match found!', 'Match Success')
       return not isNegative
     end
   end

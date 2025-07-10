@@ -1,17 +1,32 @@
 _G.utmode = nil
-if arg[1] then
-    _G.utmode = arg[1]
+_G.ut_name_filter = nil
+
+local i = 1
+while i <= #arg do
+  local param = arg[i]
+  if param == '-eo' then
+    _G.utmode = '-eo'
+    i = i + 1
+  elseif param == '-n' then
+    if i + 1 <= #arg then
+      _G.ut_name_filter = arg[i + 1]
+      i = i + 2
+    else
+      print('Error: -n requires a pattern argument')
+      os.exit(1)
+    end
+  else
+    i = i + 1
+  end
 end
 
 local dirSct = arg[0]:match('(.*/)')
 local dirBse = dirSct .. '../'
 package.path = dirBse .. 'lua/?.lua;' .. dirBse .. 'lua/?/init.lua;' .. dirBse .. '?.lua;' .. dirBse .. '?/init.lua;' .. (package.path or '')
 
-
 local ut = require('tests.unitester')
 
 ut.setup()
-
 
 -- Dynamically scan test files
 local function scan()

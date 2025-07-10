@@ -12,13 +12,13 @@ local cache = {}
 function M.load()
   local cfgPath = M.findCfg()
   if not cfgPath then
-    require('exer.core').log.debug('[proj] No config file found')
+    require('exer.core').lg.debug('[proj] No config file found')
     return { acts = {}, apps = {} }
   end
 
-  require('exer.core').log.debug('[proj] Loading config from: ' .. cfgPath)
+  require('exer.core').lg.debug('[proj] Loading config from: ' .. cfgPath)
   if cache[cfgPath] then
-    require('exer.core').log.debug('[proj] Using cached config')
+    require('exer.core').lg.debug('[proj] Using cached config')
     return cache[cfgPath]
   end
 
@@ -30,28 +30,28 @@ function M.load()
 
   if cfgPath:match('%.editorconfig$') then
     local co = require('exer.core')
-    co.log.debug('[proj] Processing .editorconfig file')
+    co.lg.debug('[proj] Processing .editorconfig file')
     local editorconfig = co.psr.editorconfig
     local exerCnt, sectionType = editorconfig.extractExerSection(fileCnt)
     if exerCnt then
-      co.log.debug('[proj] Found exer content, section type: ' .. (sectionType or 'none'))
+      co.lg.debug('[proj] Found exer content, section type: ' .. (sectionType or 'none'))
       -- If it's INI format [exer.acts], convert to TOML
       if sectionType == 'exer_acts' then
-        co.log.debug('[proj] Converting INI format to TOML')
+        co.lg.debug('[proj] Converting INI format to TOML')
         local convertedToml = editorconfig.convertIniToToml(exerCnt)
         if convertedToml then
-          co.log.debug('[proj] Converted TOML: ' .. convertedToml)
+          co.lg.debug('[proj] Converted TOML: ' .. convertedToml)
           cfg = M.parse(convertedToml)
         else
-          co.log.debug('[proj] Failed to convert INI to TOML')
+          co.lg.debug('[proj] Failed to convert INI to TOML')
         end
       else
         -- Parse as regular TOML
-        co.log.debug('[proj] Parsing as regular TOML')
+        co.lg.debug('[proj] Parsing as regular TOML')
         cfg = M.parse(exerCnt)
       end
     else
-      co.log.debug('[proj] No exer content found in .editorconfig')
+      co.lg.debug('[proj] No exer content found in .editorconfig')
     end
   else
     local fileType = cfgPath:match('%.json$') and 'json' or 'toml'

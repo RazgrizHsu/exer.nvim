@@ -10,8 +10,8 @@ describe('Filetype filter tests', function()
       { id = 'js', cmd = 'node', when = 'javascript' },
     }
     local filtered = proj.filterActs(acts, 'python')
-    assert.are.equal(1, #filtered)
-    assert.are.equal('py', filtered[1].id)
+    ut.assert.are.equal(1, #filtered)
+    ut.assert.are.equal('py', filtered[1].id)
   end)
 
   it('includes tasks without when clause', function()
@@ -20,8 +20,8 @@ describe('Filetype filter tests', function()
       { id = 'py', cmd = 'python', when = 'python' },
     }
     local filtered = proj.filterActs(acts, 'javascript')
-    assert.are.equal(1, #filtered)
-    assert.are.equal('general', filtered[1].id)
+    ut.assert.are.equal(1, #filtered)
+    ut.assert.are.equal('general', filtered[1].id)
   end)
 
   it('handles filetype arrays', function()
@@ -30,8 +30,8 @@ describe('Filetype filter tests', function()
       { id = 'py', cmd = 'python', when = 'python' },
     }
     local filtered = proj.filterActs(acts, 'javascript')
-    assert.are.equal(1, #filtered)
-    assert.are.equal('multi', filtered[1].id)
+    ut.assert.are.equal(1, #filtered)
+    ut.assert.are.equal('multi', filtered[1].id)
   end)
 
   it('handles complex filter conditions', function()
@@ -45,25 +45,25 @@ describe('Filetype filter tests', function()
 
     -- Test Python
     local py_filtered = proj.filterActs(acts, 'python')
-    assert.are.equal(3, #py_filtered) -- global + py1 + py2
+    ut.assert.are.equal(3, #py_filtered) -- global + py1 + py2
 
     -- Test TypeScript
     local ts_filtered = proj.filterActs(acts, 'typescript')
-    assert.are.equal(2, #ts_filtered) -- global + web
+    ut.assert.are.equal(2, #ts_filtered) -- global + web
 
     -- Test non-existent type
     local unknown_filtered = proj.filterActs(acts, 'unknown')
-    assert.are.equal(1, #unknown_filtered) -- only global
+    ut.assert.are.equal(1, #unknown_filtered) -- only global
   end)
 
   it('handles empty task list', function()
     local filtered = proj.filterActs({}, 'python')
-    assert.are.equal(0, #filtered)
+    ut.assert.are.equal(0, #filtered)
   end)
 
   it('handles nil task list', function()
     local filtered = proj.filterActs(nil, 'python')
-    assert.are.equal(0, #filtered)
+    ut.assert.are.equal(0, #filtered)
   end)
 
   it('handles nil filetype', function()
@@ -72,6 +72,6 @@ describe('Filetype filter tests', function()
       { id = 'py', cmd = 'python', when = 'python' },
     }
     local filtered = proj.filterActs(acts, nil)
-    assert.are.equal(1, #filtered) -- only tasks without when clause
+    ut.assert.are.equal(1, #filtered) -- only tasks without when clause
   end)
 end)

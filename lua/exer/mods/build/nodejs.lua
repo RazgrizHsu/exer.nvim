@@ -15,17 +15,17 @@ local co = require('exer.core')
 function M.detect(pathWorkDir)
   local packageJson = pathWorkDir .. co.utils.osPath('/package.json')
 
-  co.log.debug('NodeJS detect called with pathWorkDir: ' .. pathWorkDir, 'NodeJS')
-  co.log.debug('NodeJS detect checking: ' .. packageJson, 'NodeJS')
+  co.lg.debug('NodeJS detect called with pathWorkDir: ' .. pathWorkDir, 'NodeJS')
+  co.lg.debug('NodeJS detect checking: ' .. packageJson, 'NodeJS')
 
   if not co.io.fileExists(packageJson) then
-    co.log.debug('package.json not found at: ' .. packageJson, 'NodeJS')
+    co.lg.debug('package.json not found at: ' .. packageJson, 'NodeJS')
     return false
   end
 
   local hasRequiredFields = co.io.fileContains(packageJson, { '"name"', '"scripts"', '"version"' })
 
-  co.log.debug('package.json found, has required fields: ' .. tostring(hasRequiredFields), 'NodeJS')
+  co.lg.debug('package.json found, has required fields: ' .. tostring(hasRequiredFields), 'NodeJS')
 
   return hasRequiredFields
 end

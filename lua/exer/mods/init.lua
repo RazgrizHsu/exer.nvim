@@ -8,7 +8,7 @@ function M.scanMods()
   local pathLDir = pathL:match('(.*[/\\\\])')
   local modules = {}
 
-  co.log.debug('Scanning mods directory: ' .. pathLDir, 'ModsScan')
+  co.lg.debug('Scanning mods directory: ' .. pathLDir, 'ModsScan')
 
   local function shouldExclude(dirName)
     for _, exclude in ipairs(excludeDirs) do
@@ -18,7 +18,7 @@ function M.scanMods()
   end
 
   local function scanDir(dir, category)
-    co.log.debug('Scanning category directory: ' .. dir .. ' (category: ' .. category .. ')', 'ModsScan')
+    co.lg.debug('Scanning category directory: ' .. dir .. ' (category: ' .. category .. ')', 'ModsScan')
     local handle = vim.loop.fs_scandir(dir)
     if handle then
       while true do
@@ -27,7 +27,7 @@ function M.scanMods()
 
         if type == 'file' and name:match('%.lua$') then
           local modName = name:match('(.+)%.lua$')
-          co.log.debug('Found module: ' .. category .. '/' .. modName, 'ModsScan')
+          co.lg.debug('Found module: ' .. category .. '/' .. modName, 'ModsScan')
           table.insert(modules, {
             name = modName,
             category = category,
@@ -36,7 +36,7 @@ function M.scanMods()
         end
       end
     else
-      co.log.debug('Failed to open directory: ' .. dir, 'ModsScan')
+      co.lg.debug('Failed to open directory: ' .. dir, 'ModsScan')
     end
   end
 
@@ -46,18 +46,18 @@ function M.scanMods()
       local name, type = vim.loop.fs_scandir_next(handle)
       if not name then break end
 
-      co.log.debug('Found item: ' .. name .. ' (type: ' .. type .. ')', 'ModsScan')
+      co.lg.debug('Found item: ' .. name .. ' (type: ' .. type .. ')', 'ModsScan')
 
       if type == 'directory' and not shouldExclude(name) then
         local dirPath = pathLDir .. name
-        co.log.debug('Scanning subdirectory: ' .. dirPath, 'ModsScan')
+        co.lg.debug('Scanning subdirectory: ' .. dirPath, 'ModsScan')
         scanDir(dirPath, name)
       elseif type == 'directory' then
-        co.log.debug('Excluding directory: ' .. name, 'ModsScan')
+        co.lg.debug('Excluding directory: ' .. name, 'ModsScan')
       end
     end
   else
-    co.log.debug('Failed to open mods directory: ' .. pathLDir, 'ModsScan')
+    co.lg.debug('Failed to open mods directory: ' .. pathLDir, 'ModsScan')
   end
 
   return modules
@@ -82,10 +82,10 @@ function M.getOpts(ft)
   local opts = {}
   local modules = M.scanMods()
 
-  co.log.debug('=== MODS SCANNING STARTED ===', 'Mods')
-  co.log.debug('Working directory: ' .. pathWorkDir, 'Mods')
-  co.log.debug('Filetype: ' .. (ft or 'nil'), 'Mods')
-  co.log.debug('Found ' .. #modules .. ' modules: ' .. vim.inspect(modules), 'Mods')
+  co.lg.debug('=== MODS SCANNING STARTED ===', 'Mods')
+  co.lg.debug('Working directory: ' .. pathWorkDir, 'Mods')
+  co.lg.debug('Filetype: ' .. (ft or 'nil'), 'Mods')
+  co.lg.debug('Found ' .. #modules .. ' modules: ' .. vim.inspect(modules), 'Mods')
 
   for _, modInfo in ipairs(modules) do
     local mod = M.search(modInfo.category, modInfo.name)
@@ -98,7 +98,7 @@ function M.getOpts(ft)
           for _, supportedFt in ipairs(mod.fileTypes) do
             if supportedFt == ft then
               shouldInclude = true
-              co.log.debug(string.format('Language module %s/%s matches filetype: %s', modInfo.category, modInfo.name, ft), 'Mods')
+              co.lg.debug(string.format('Language module %s/%s matches filetype: %s', modInfo.category, modInfo.name, ft), 'Mods')
               break
             end
           end
@@ -107,9 +107,9 @@ function M.getOpts(ft)
         -- Non-language modules (build, test, etc) use detect() method
         if mod.detect then
           shouldInclude = mod.detect(pathWorkDir)
-          co.log.debug(string.format('Module %s/%s detect result: %s', modInfo.category, modInfo.name, tostring(shouldInclude)), 'Mods')
+          co.lg.debug(string.format('Module %s/%s detect result: %s', modInfo.category, modInfo.name, tostring(shouldInclude)), 'Mods')
         else
-          co.log.debug(string.format('Module %s/%s missing detect function', modInfo.category, modInfo.name), 'Mods')
+          co.lg.debug(string.format('Module %s/%s missing detect function', modInfo.category, modInfo.name), 'Mods')
         end
       end
 
@@ -121,16 +121,16 @@ function M.getOpts(ft)
           opt._modInfo = modInfo
         end
 
-        co.log.debug(string.format('Module %s/%s returned %d options', modInfo.category, modInfo.name, #modOpts), 'Mods')
+        co.lg.debug(string.format('Module %s/%s returned %d options', modInfo.category, modInfo.name, #modOpts), 'Mods')
 
         vim.list_extend(opts, modOpts)
       end
     else
-      co.log.debug(string.format('Module %s/%s failed to load', modInfo.category, modInfo.name), 'Mods')
+      co.lg.debug(string.format('Module %s/%s failed to load', modInfo.category, modInfo.name), 'Mods')
     end
   end
 
-  co.log.debug('Total mods options: ' .. #opts, 'Mods')
+  co.lg.debug('Total mods options: ' .. #opts, 'Mods')
 
   return opts
 end

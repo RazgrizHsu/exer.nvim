@@ -20,35 +20,35 @@ end
 
 describe('Fuzzy matching algorithm', function()
   it('matches exact strings', function()
-    assert.is_true(fuzzyMatch('build', 'build'))
-    assert.is_true(fuzzyMatch('test', 'test'))
+    ut.assert.is_true(fuzzyMatch('build', 'build'))
+    ut.assert.is_true(fuzzyMatch('test', 'test'))
   end)
 
   it('matches fuzzy patterns', function()
     -- Test case that the user mentioned
-    assert.is_true(fuzzyMatch('jest:testatcursor', 'testcur'))
+    ut.assert.is_true(fuzzyMatch('jest:testatcursor', 'testcur'))
 
     -- Other fuzzy patterns
-    assert.is_true(fuzzyMatch('jest:testatcursor', 'jtc'))
-    assert.is_true(fuzzyMatch('buildproject', 'bldprj'))
-    assert.is_true(fuzzyMatch('typescript:compile', 'tscomp'))
+    ut.assert.is_true(fuzzyMatch('jest:testatcursor', 'jtc'))
+    ut.assert.is_true(fuzzyMatch('buildproject', 'bldprj'))
+    ut.assert.is_true(fuzzyMatch('typescript:compile', 'tscomp'))
   end)
 
   it('rejects non-matching patterns', function()
-    assert.is_false(fuzzyMatch('build', 'xyz'))
-    assert.is_false(fuzzyMatch('test', 'abc'))
-    assert.is_false(fuzzyMatch('jest:testatcursor', 'xyz'))
+    ut.assert.is_false(fuzzyMatch('build', 'xyz'))
+    ut.assert.is_false(fuzzyMatch('test', 'abc'))
+    ut.assert.is_false(fuzzyMatch('jest:testatcursor', 'xyz'))
   end)
 
   it('handles empty query', function()
-    assert.is_true(fuzzyMatch('anything', ''))
-    assert.is_true(fuzzyMatch('', ''))
+    ut.assert.is_true(fuzzyMatch('anything', ''))
+    ut.assert.is_true(fuzzyMatch('', ''))
   end)
 
   it('handles edge cases', function()
-    assert.is_false(fuzzyMatch('', 'a'))
-    assert.is_true(fuzzyMatch('a', 'a'))
-    assert.is_false(fuzzyMatch('a', 'ab'))
+    ut.assert.is_false(fuzzyMatch('', 'a'))
+    ut.assert.is_true(fuzzyMatch('a', 'a'))
+    ut.assert.is_false(fuzzyMatch('a', 'ab'))
   end)
 end)
 
@@ -62,14 +62,14 @@ describe('Integration with filter logic', function()
     local queryProcessed = query:lower():gsub('%s+', '')
 
     -- Show the transformation
-    assert.are.equal('jest:testatcursor', textProcessed)
-    assert.are.equal('testcur', queryProcessed)
+    ut.assert.are.equal('jest:testatcursor', textProcessed)
+    ut.assert.are.equal('testcur', queryProcessed)
 
     -- Exact match fails
     local exactMatch = textProcessed:find(queryProcessed, 1, true)
-    assert.is_nil(exactMatch)
+    ut.assert.is_nil(exactMatch)
 
     -- But fuzzy match succeeds
-    assert.is_true(fuzzyMatch(textProcessed, queryProcessed))
+    ut.assert.is_true(fuzzyMatch(textProcessed, queryProcessed))
   end)
 end)

@@ -2,8 +2,30 @@ local M = {}
 
 M.stats = { passed = 0, failed = 0, total = 0 }
 M.ctx = { filepath = './tmp/test.py', filetype = 'py' }
+M.current_describe = nil
 
 function M.describe(name, func)
+  M.current_describe = name
+
+  if _G.ut_name_filter then
+    local has_match = false
+    if string.find(name:lower(), _G.ut_name_filter:lower()) then
+      has_match = true
+    else
+      local temp_func = function()
+        local orig_it = M.it
+        M.it = function(it_name, it_func)
+          if string.find(it_name:lower(), _G.ut_name_filter:lower()) then has_match = true end
+        end
+        func()
+        M.it = orig_it
+      end
+      temp_func()
+    end
+
+    if not has_match then return end
+  end
+
   if not utmode then
     print('\n📋 ' .. name)
     print(string.rep('-', 50))
@@ -12,6 +34,13 @@ function M.describe(name, func)
 end
 
 function M.it(name, func)
+  if _G.ut_name_filter then
+    local desc_match = M.current_describe and string.find(M.current_describe:lower(), _G.ut_name_filter:lower())
+    local it_match = string.find(name:lower(), _G.ut_name_filter:lower())
+
+    if not desc_match and not it_match then return end
+  end
+
   M.stats.total = M.stats.total + 1
   local ok, err = pcall(func)
   if ok then
@@ -72,235 +101,33 @@ function M.setup()
   local dirBse = dirSct .. '../'
   package.path = dirBse .. 'lua/?.lua;' .. dirBse .. 'lua/?/init.lua;' .. dirBse .. '?.lua;' .. dirBse .. '?/init.lua;' .. (package.path or '')
 
-  -- package.path = vim.fn.getcwd() .. '/lua/?.lua;' .. package.path
-
   -- Force reload of proj modules to use new vim instance
-  package.loaded['exer.proj.vars'] = nil
-  package.loaded['exer.proj'] = nil
+  -- package.loaded['exer.proj.vars'] = nil
+  -- package.loaded['exer.proj'] = nil
 
-  local fake = {
-    fn = {
-      readfile = function(path)
-        local f = io.open(path, 'r')
-        if not f then return nil end
-        local content = f:read('*all')
-        f:close()
-        return vim.split(content, '\n')
-      end,
-      writefile = function(lines, path)
-        local f = io.open(path, 'w')
-        if not f then return end
-        f:write(table.concat(lines, '\n'))
-        f:close()
-      end,
-      mkdir = function(path, mode) os.execute('mkdir -p ' .. path) end,
-      delete = function(path, flags)
-        if flags == 'rf' then
-          os.execute('rm -rf ' .. path)
-        else
-          os.execute('rm -f ' .. path)
-        end
-      end,
-      getcwd = function()
-        local filepath = M.ctx.filepath
-        return filepath:match('(.*)/[^/]*$') or '.'
-      end,
-      systemlist = function(cmd) return {} end,
-      filereadable = function(path)
-        local f = io.open(path, 'r')
-        if f then
-          f:close()
-          return 1
-        end
-        return 0
-      end,
-      fnamemodify = function(path, mods)
-        if mods == ':t' then
-          return path:match('[^/]*$')
-        elseif mods == ':p:h' then
-          return path:match('(.*/)')
-        elseif mods == ':t:r' then
-          local name = path:match('[^/]*$')
-          return name:match('(.*)%.[^%.]*$') or name
-        end
-        return path
-      end,
-      expand = function(expr)
-        local fp = M.ctx.filepath
-        if expr == '%:p:h' then
-          return fp:match('(.*)/[^/]*$') or '.'
-        elseif expr == '%:t:r' then
-          local name = fp:match('[^/]*$')
-          return name:match('(.*)%.[^%.]*$') or name
-        elseif expr == '%:e' then
-          return fp:match('%.([^%.]*)$') or ''
-        elseif expr == '%:t' then
-          return fp:match('[^/]*$') or ''
-        elseif expr == '%:p:r' then
-          return fp:match('(.*)%.[^%.]*$') or fp
-        elseif expr == '%:p' then
-          return fp
-        elseif expr == '%' then
-          return fp
-        else
-          return expr
-        end
-      end,
-      json_decode = function(str)
-        -- Simple JSON parser for testing
-        if not str or str == '' then return {} end
-
-        -- Try to use a simple JSON parser
-        local ok, result = pcall(function()
-          -- Remove whitespace and newlines
-          str = str:gsub('%s+', ' '):gsub('^ ', ''):gsub(' $', '')
-
-          -- Very basic JSON parsing (only for test cases)
-          if str == '{}' then return {} end
-
-          -- Try to parse simple structures
-          if str:match('^{.*}$') then
-            local obj = {}
-
-            -- Parse "exer" field
-            local exer_match = str:match('"exer"%s*:%s*{(.-)}"?%s*}$')
-            if exer_match then
-              obj.exer = {}
-
-              -- Parse acts array
-              local acts_match = exer_match:match('"acts"%s*:%s*%[(.-)%]')
-              if acts_match then
-                obj.exer.acts = {}
-                local act_pattern = '{([^}]*)}'
-                for act_str in acts_match:gmatch(act_pattern) do
-                  local act = {}
-                  for key, value in act_str:gmatch('"([^"]+)"%s*:%s*"([^"]*)"') do
-                    act[key] = value
-                  end
-                  table.insert(obj.exer.acts, act)
-                end
-              end
-
-              -- Parse apps array
-              local apps_match = exer_match:match('"apps"%s*:%s*%[(.-)%]')
-              if apps_match then
-                obj.exer.apps = {}
-                local app_pattern = '{([^}]*)}'
-                for app_str in apps_match:gmatch(app_pattern) do
-                  local app = {}
-                  for key, value in app_str:gmatch('"([^"]+)"%s*:%s*"([^"]*)"') do
-                    app[key] = value
-                  end
-                  table.insert(obj.exer.apps, app)
-                end
-              end
-
-              -- Parse compilers object
-              local compilers_match = exer_match:match('"compilers"%s*:%s*{(.-)}"?')
-              if compilers_match then
-                obj.exer.compilers = {} -- This is a simplified parser, won't handle nested objects perfectly
-                -- But good enough for basic testing
-              end
-            end
-
-            -- Parse root-level acts
-            local root_acts = str:match('"acts"%s*:%s*%[(.-)%]')
-            if root_acts and not obj.exer then
-              obj.acts = {}
-              local act_pattern = '{([^}]*)}'
-              for act_str in root_acts:gmatch(act_pattern) do
-                local act = {}
-                for key, value in act_str:gmatch('"([^"]+)"%s*:%s*"([^"]*)"') do
-                  act[key] = value
-                end
-                table.insert(obj.acts, act)
-              end
-            end
-
-            return obj
-          end
-
-          return {}
-        end)
-
-        return ok and result or {}
-      end,
-      maparg = function(lhs, mode, abbr, dict) return '' end,
-    },
-    api = {
-      nvim_buf_get_name = function(bufnr) return M.ctx.filepath end,
-      nvim_command = function() end,
-      nvim_set_current_dir = function(dir) end,
-      nvim_set_keymap = function(mode, lhs, rhs, opts) end,
-      nvim_get_option_value = function(opt, ctx)
-        if opt == 'filetype' then return M.ctx.filetype end
-        return ''
-      end,
-    },
-    v = {
-      servername = 'nvim-test',
-    },
-    loop = {
-      fs_stat = function(path)
-        local f = io.open(path, 'r')
-        if f then
-          f:close()
-          return { type = 'file' }
-        end
-        return nil
-      end,
-    },
-    notify = function(msg, level, ops) end,
-    log = { levels = { ERROR = 1, INFO = 2 } },
-    split = function(str, sep)
-      local result = {}
-      if not str then return result end
-      for part in str:gmatch('[^' .. (sep or '\n') .. ']+') do
-        table.insert(result, part)
-      end
-      return result
-    end,
-    list_extend = function(list1, list2)
-      for _, item in ipairs(list2) do
-        table.insert(list1, item)
-      end
-      return list1
-    end,
-    tbl_deep_extend = function(behavior, ...)
-      local result = {}
-      for _, tbl in ipairs({ ... }) do
-        for k, v in pairs(tbl) do
-          if type(v) == 'table' and type(result[k]) == 'table' then
-            result[k] = vim.tbl_deep_extend('force', result[k], v)
-          else
-            result[k] = v
-          end
-        end
-      end
-      return result
-    end,
-    tbl_extend = function(behavior, ...)
-      local result = {}
-      for i = 1, select('#', ...) do
-        local t = select(i, ...)
-        if t then
-          for k, v in pairs(t) do
-            result[k] = v
-          end
-        end
-      end
-      return result
-    end,
-  }
-
-  -- 統一設定全域 vim 和 _G.vim
-  vim = fake
-  _G.vim = fake
+  -- 使用真實的 nvim 環境，只需要補充測試特定的功能
+  -- 不要覆蓋全局 assert，只設置測試助手函數
   describe = M.describe
   it = M.it
-  assert = M.assert
 
-  return fake
+  -- 保持測試上下文設定
+  local originals = {
+    buf_get_name = vim.api.nvim_buf_get_name,
+    get_option_value = vim.api.nvim_get_option_value,
+  }
+
+  -- 重寫部分 API 以支援測試上下文
+  vim.api.nvim_buf_get_name = function(bufnr) return M.ctx.filepath end
+
+  vim.api.nvim_get_option_value = function(opt, ctx)
+    if opt == 'filetype' then return M.ctx.filetype end
+    return originals.get_option_value(opt, ctx)
+  end
+
+  -- 需要一些額外的 vim 函數用於測試
+  if not vim.fn.json_decode then vim.fn.json_decode = vim.json.decode end
+
+  return vim
 end
 
 function M.createTestFile(path, content)
@@ -350,7 +177,9 @@ function M.withTestFile(path, content, filetype, callback)
     filetype = M.ctx.filetype,
   }
 
-  M.ctx.filepath = path
+  -- 使用絕對路徑，確保與真實的 nvim 環境一致
+  local abs_path = vim.fn.fnamemodify(path, ':p')
+  M.ctx.filepath = abs_path
   M.ctx.filetype = filetype or inferFileType(path)
   M.setup()
 
@@ -371,11 +200,106 @@ function M.withTestFile(path, content, filetype, callback)
   return result
 end
 
-function M.testCtx(filepath, filetype)
-  M.ctx.filepath = filepath
-  M.ctx.filetype = filetype
-  -- Force reload the fake vim to pick up new context
-  M.setup()
+function M.itEnv(name, env, callback)
+  M.it(name, function()
+    local co = require('exer.core')
+    local proj = require('exer.proj')
+    local config = require('exer.config')
+    local originalGetRoot = co.io.getRoot
+    local originalFileExists = co.io.fileExists
+    local originalReadFile = vim.fn.readfile
+
+    -- 確保清理任何快取狀態
+    proj.clearCache()
+
+    -- 重置 config 狀態 - 強制重載預設值
+    package.loaded['exer.config'] = nil
+    config = require('exer.config')
+
+    -- 設定 config 如果提供
+    if env.config then config.setup(env.config) end
+
+    -- Mock io.getRoot 而非改變工作目錄
+    if env.cwd then co.io.getRoot = function() return env.cwd end end
+
+    -- 建構內部檔案表，包含 files 和 mockFiles
+    local internalFiles = {}
+    if env.files then
+      for filePath, content in pairs(env.files) do
+        local fullPath = env.cwd and (env.cwd .. '/' .. filePath) or filePath
+        internalFiles[fullPath] = content
+      end
+    end
+    if env.mockFiles then
+      for filePath, content in pairs(env.mockFiles) do
+        internalFiles[filePath] = content
+      end
+    end
+
+    -- Mock fileExists 檢查內部表和實體檔案
+    if next(internalFiles) then
+      co.io.fileExists = function(path)
+        -- 先檢查內部表
+        if internalFiles[path] ~= nil then return true end
+        -- 找不到則檢查實體檔案
+        return originalFileExists(path)
+      end
+    end
+
+    -- Mock readfile 檢查內部表和實體檔案
+    if next(internalFiles) then
+      vim.fn.readfile = function(path)
+        -- 先檢查內部表
+        local content = internalFiles[path]
+        if content then
+          if type(content) == 'string' then
+            return vim.split(content, '\n')
+          elseif type(content) == 'table' then
+            return content
+          end
+        end
+        -- 找不到則使用原始 readfile
+        return originalReadFile(path)
+      end
+    end
+
+    -- 設置測試上下文
+    local octx = {
+      filepath = M.ctx.filepath,
+      filetype = M.ctx.filetype,
+    }
+
+    -- 如果 env 指定了 currentFile，自動設定測試上下文
+    if env.currentFile then
+      local fullPath = env.cwd and (env.cwd .. '/' .. env.currentFile) or env.currentFile
+      M.ctx.filepath = fullPath
+      M.ctx.filetype = env.filetype or inferFileType(env.currentFile)
+    end
+
+    -- 執行測試
+    local success, result = pcall(callback)
+
+    -- 無論是否成功，都要清理資源
+    -- 恢復上下文
+    M.ctx.filepath = octx.filepath
+    M.ctx.filetype = octx.filetype
+
+    -- 恢復原始函數
+    co.io.getRoot = originalGetRoot
+    co.io.fileExists = originalFileExists
+    vim.fn.readfile = originalReadFile
+
+    -- 不需要清理實體檔案，因為我們用 mock
+
+    -- 最後清理快取
+    proj.clearCache()
+
+    -- 重置 config 狀態
+    package.loaded['exer.config'] = nil
+
+    if not success then error(result) end
+    return result
+  end)
 end
 
 return M

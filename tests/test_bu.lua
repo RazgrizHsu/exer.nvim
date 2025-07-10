@@ -92,21 +92,21 @@ describe('make.lua module tests', function()
 
   it('should parse Makefile targets', function()
     local opts = make_module.getOpts(test_files.makefile.path)
-    assert.are.equal(3, #opts)
-    assert.are.equal('all', opts[1].value)
-    assert.are.equal('clean', opts[2].value)
-    assert.are.equal('test', opts[3].value)
+    ut.assert.are.equal(3, #opts)
+    ut.assert.are.equal('all', opts[1].value)
+    ut.assert.are.equal('clean', opts[2].value)
+    ut.assert.are.equal('test', opts[3].value)
   end)
 
   it('should format target names correctly', function()
     local opts = make_module.getOpts(test_files.makefile.path)
-    assert.are.equal('Make all', opts[1].text)
-    assert.are.equal('make', opts[1].bu)
+    ut.assert.are.equal('Make all', opts[1].text)
+    ut.assert.are.equal('make', opts[1].bu)
   end)
 
   it('should return empty array for non-existent files', function()
     local opts = make_module.getOpts('/nonexistent/Makefile')
-    assert.are.equal(0, #opts)
+    ut.assert.are.equal(0, #opts)
   end)
 end)
 
@@ -134,7 +134,7 @@ describe('cmake.lua module tests', function()
 
   it('should parse add_executable targets', function()
     local opts = cmake_module.getOpts(test_files.cmake.path)
-    assert.is_true(#opts >= 2)
+    ut.assert.is_true(#opts >= 2)
 
     local found_main = false
     local found_test = false
@@ -142,8 +142,8 @@ describe('cmake.lua module tests', function()
       if opt.value == 'main' then found_main = true end
       if opt.value == 'test_app' then found_test = true end
     end
-    assert.is_true(found_main, 'should find main target')
-    assert.is_true(found_test, 'should find test_app target')
+    ut.assert.is_true(found_main, 'should find main target')
+    ut.assert.is_true(found_test, 'should find test_app target')
   end)
 
   it('should parse add_custom_target targets', function()
@@ -152,7 +152,7 @@ describe('cmake.lua module tests', function()
     for _, opt in ipairs(opts) do
       if opt.value == 'docs' then found_docs = true end
     end
-    assert.is_true(found_docs, 'should find docs target')
+    ut.assert.is_true(found_docs, 'should find docs target')
   end)
 end)
 
@@ -200,15 +200,13 @@ describe('nodejs.lua module tests', function()
   local json = require('exer.core.psr.json')
   vim.fn.json_decode = function(str)
     local ok, data = pcall(json.decode, str)
-    if ok then
-      return data
-    end
+    if ok then return data end
     return {}
   end
 
   it('should parse package.json scripts', function()
     local opts = nodejs_module.getOpts(test_files.package_json.path)
-    assert.is_true(#opts >= 4, 'should have at least 4 options')
+    ut.assert.is_true(#opts >= 4, 'should have at least 4 options')
 
     local script_names = {}
     for _, opt in ipairs(opts) do
@@ -218,9 +216,9 @@ describe('nodejs.lua module tests', function()
       end
     end
 
-    assert.is_true(script_names.start, 'should have start script')
-    assert.is_true(script_names.test, 'should have test script')
-    assert.is_true(script_names.build, 'should have build script')
+    ut.assert.is_true(script_names.start, 'should have start script')
+    ut.assert.is_true(script_names.test, 'should have test script')
+    ut.assert.is_true(script_names.build, 'should have build script')
   end)
 
   it('should include install and uninstall commands', function()
@@ -233,8 +231,8 @@ describe('nodejs.lua module tests', function()
       if opt.value == 'npm uninstall *' then has_uninstall = true end
     end
 
-    assert.is_true(has_install, 'should have install command')
-    assert.is_true(has_uninstall, 'should have uninstall command')
+    ut.assert.is_true(has_install, 'should have install command')
+    ut.assert.is_true(has_uninstall, 'should have uninstall command')
   end)
 end)
 

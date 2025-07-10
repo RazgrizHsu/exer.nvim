@@ -9,10 +9,10 @@ M.setup = function(opts)
   local cfg = config.get()
 
   if cfg.debug then
-    co.log.logToFile = true
-    co.log.info('=== EXER DEBUG MODE ENABLED ===', 'Setup')
-    co.log.info('Log file: ' .. co.log.logFile, 'Setup')
-    co.log.debug('Global debug flag set: ' .. tostring(_G.g_exer_debug), 'Setup')
+    co.lg.logToFile = true
+    co.lg.info('=== EXER DEBUG MODE ENABLED ===', 'Setup')
+    co.lg.info('Log file: ' .. co.lg.logFile, 'Setup')
+    co.lg.debug('Global debug flag set: ' .. tostring(_G.g_exer_debug), 'Setup')
   end
 
   vmd('ExerOpen', function() co.picker.show() end, { desc = 'Open the exer' })

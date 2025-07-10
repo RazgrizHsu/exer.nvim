@@ -6,130 +6,98 @@ describe('Custom config files', function()
   local find = require('exer.proj.find')
   local co = require('exer.core')
 
-  it('should allow custom config files in setup', function()
-    config.setup({
+  ut.itEnv('should allow custom config files in setup', {
+    config = {
       config_files = {
         'my-config.toml',
         'config/exec.toml',
         { path = 'Cargo.toml', section = 'package.metadata.exec' },
       },
-    })
-
+    },
+  }, function()
+    local config = require('exer.config')
     local opts = config.get()
-    assert.are.equal('table', type(opts.config_files))
-    assert.are.equal(3, #opts.config_files)
-    assert.are.equal('my-config.toml', opts.config_files[1])
-    assert.are.equal('config/exec.toml', opts.config_files[2])
-    assert.are.equal('table', type(opts.config_files[3]))
-    assert.are.equal('Cargo.toml', opts.config_files[3].path)
-    assert.are.equal('package.metadata.exec', opts.config_files[3].section)
+    ut.assert.are.equal('table', type(opts.config_files))
+    ut.assert.are.equal(3, #opts.config_files)
+    ut.assert.are.equal('my-config.toml', opts.config_files[1])
+    ut.assert.are.equal('config/exec.toml', opts.config_files[2])
+    ut.assert.are.equal('table', type(opts.config_files[3]))
+    ut.assert.are.equal('Cargo.toml', opts.config_files[3].path)
+    ut.assert.are.equal('package.metadata.exec', opts.config_files[3].section)
   end)
 
-  it('should use default config when no custom files specified', function()
-    config.setup({})
-
+  ut.itEnv('should use default config when no custom files specified', {
+    config = {},
+  }, function()
+    local config = require('exer.config')
     local opts = config.get()
-    assert.are.equal(nil, opts.config_files)
+    ut.assert.are.equal(nil, opts.config_files)
   end)
 
-  it('should handle string config files', function()
-    -- Mock getRoot and fileExists
-    local originalGetRoot = co.io.getRoot
-    local originalFileExists = co.io.fileExists
-
-    co.io.getRoot = function() return '/test/project' end
-    co.io.fileExists = function(path) return path == '/test/project/my-config.toml' end
-
-    config.setup({
+  ut.itEnv('should handle string config files', {
+    cwd = '/test/project',
+    config = {
       config_files = { 'my-config.toml' },
-    })
-
+    },
+    files = {
+      ['my-config.toml'] = '',
+    },
+  }, function()
+    local find = require('exer.proj.find')
     local result = find.find()
-    assert.are.equal('/test/project/my-config.toml', result)
-
-    -- Restore original functions
-    co.io.getRoot = originalGetRoot
-    co.io.fileExists = originalFileExists
+    ut.assert.are.equal('/test/project/my-config.toml', result)
   end)
 
-  it('should handle table config files with sections', function()
-    -- Mock getRoot and checkEmbedCfg
-    local originalGetRoot = co.io.getRoot
-    local originalFileExists = co.io.fileExists
-
-    co.io.getRoot = function() return '/test/project' end
-    co.io.fileExists = function(path) return path == '/test/project/Cargo.toml' end
-
-    -- Mock file reading to simulate embedded config
-    local originalReadFile = vim.fn.readfile
-    vim.fn.readfile = function(path)
-      if path == '/test/project/Cargo.toml' then
-        return {
-          '[package]',
-          'name = "test"',
-          '',
-          '[package.metadata.exec]',
-          'acts = [',
-          '  { id = "test", cmd = "cargo run" }',
-          ']',
-        }
-      end
-      return {}
-    end
-
-    config.setup({
+  ut.itEnv('should handle table config files with sections', {
+    cwd = '/test/project',
+    config = {
       config_files = {
         { path = 'Cargo.toml', section = 'package.metadata.exec' },
       },
-    })
-
+    },
+    files = {
+      ['Cargo.toml'] = {
+        '[package]',
+        'name = "test"',
+        '',
+        '[package.metadata.exec]',
+        'acts = [',
+        '  { id = "test", cmd = "cargo run" }',
+        ']',
+      },
+    },
+  }, function()
+    local find = require('exer.proj.find')
     local result = find.find()
-    assert.are.equal('/test/project/Cargo.toml', result)
-
-    -- Restore original functions
-    co.io.getRoot = originalGetRoot
-    co.io.fileExists = originalFileExists
-    vim.fn.readfile = originalReadFile
+    ut.assert.are.equal('/test/project/Cargo.toml', result)
   end)
 
-  it('should handle absolute paths', function()
-    local originalGetRoot = co.io.getRoot
-    local originalFileExists = co.io.fileExists
-
-    co.io.getRoot = function() return '/test/project' end
-    co.io.fileExists = function(path) return path == '/absolute/path/my-config.toml' end
-
-    config.setup({
+  ut.itEnv('should handle absolute paths', {
+    cwd = '/test/project',
+    config = {
       config_files = { '/absolute/path/my-config.toml' },
-    })
-
+    },
+    mockFiles = {
+      ['/absolute/path/my-config.toml'] = '',
+    },
+  }, function()
+    local find = require('exer.proj.find')
     local result = find.find()
-    assert.are.equal('/absolute/path/my-config.toml', result)
-
-    -- Restore original functions
-    co.io.getRoot = originalGetRoot
-    co.io.fileExists = originalFileExists
+    ut.assert.are.equal('/absolute/path/my-config.toml', result)
   end)
 
-  it('should respect order of config files', function()
-    local originalGetRoot = co.io.getRoot
-    local originalFileExists = co.io.fileExists
-
-    co.io.getRoot = function() return '/test/project' end
-    co.io.fileExists = function(path)
-      -- Second file exists but first should be found first
-      return path == '/test/project/second.toml'
-    end
-
-    config.setup({
+  ut.itEnv('should respect order of config files', {
+    cwd = '/test/project',
+    config = {
       config_files = { 'first.toml', 'second.toml' },
-    })
-
+    },
+    files = {
+      -- Second file exists but first should be found first
+      ['second.toml'] = '',
+    },
+  }, function()
+    local find = require('exer.proj.find')
     local result = find.find()
-    assert.are.equal('/test/project/second.toml', result)
-
-    -- Restore original functions
-    co.io.getRoot = originalGetRoot
-    co.io.fileExists = originalFileExists
+    ut.assert.are.equal('/test/project/second.toml', result)
   end)
 end)

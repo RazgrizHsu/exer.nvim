@@ -3,12 +3,9 @@ ut.setup()
 local proj = require('exer.proj')
 
 describe('Integration tests', function()
-  local test_dir = './tmp/proj_integration_test'
-  local test_config = test_dir .. '/exec.toml'
-
-  it('sets up test environment', function()
-    vim.fn.mkdir(test_dir, 'p')
-    local content = [[
+  local pathTest = './tmp/proj_integration_test'
+  local pathCfg = pathTest .. '/exer.toml'
+  local cfgTxt = [[
 acts = [
   { id = "run", cmd = "python ${file}", desc = "execute file" },
   { id = "test", cmd = "pytest ${file} -v", when = "python", desc = "run tests" },
@@ -16,55 +13,69 @@ acts = [
   { id = "format", cmd = ["black ${file}", "isort ${file}"], when = "python", desc = "formatting" }
 ]
 ]]
-    vim.fn.writefile(vim.split(content, '\n'), test_config)
-    assert.is_true(vim.loop.fs_stat(test_config) ~= nil, 'test config file should exist')
-  end)
 
-  it('tests configuration loading', function()
-    -- Mock finding config file
-    vim.fn.getcwd = function() return test_dir end
-
+  ut.itEnv('tests configuration loading', {
+    cwd = pathTest,
+    files = {
+      ['exer.toml'] = cfgTxt,
+    },
+  }, function()
     local fnd = require('exer.proj.find')
     local config_path = fnd.find()
-    assert.are.equal(test_config, config_path)
+
+    ut.assert.is_true(config_path ~= nil, 'should find config file')
+    if config_path then ut.assert.matches('exer%.toml$', config_path, 'should find exer.toml') end
   end)
 
-  it('tests get_acts functionality', function()
-    -- Clear cache and reset environment
-    proj.clearCache()
-    vim.fn.getcwd = function() return test_dir end
-
-    -- Test Python tasks
+  ut.itEnv('tests get_acts functionality', {
+    cwd = pathTest,
+    files = {
+      ['exer.toml'] = cfgTxt,
+    },
+  }, function()
     local python_acts = proj.getActs('python')
-    assert.are.equal(4, #python_acts) -- run, test, lint, format
+
+    ut.assert.are.equal(4, #python_acts) -- run, test, lint, format
 
     -- Check if contains correct tasks
     local act_ids = {}
     for _, act in ipairs(python_acts) do
       act_ids[act.id] = true
     end
-    assert.is_true(act_ids['run'])
-    assert.is_true(act_ids['test'])
-    assert.is_true(act_ids['lint'])
-    assert.is_true(act_ids['format'])
+    ut.assert.is_true(act_ids['run'])
+    ut.assert.is_true(act_ids['test'])
+    ut.assert.is_true(act_ids['lint'])
+    ut.assert.is_true(act_ids['format'])
   end)
 
-  it('tests JavaScript task filtering', function()
+  ut.itEnv('tests JavaScript task filtering', {
+    cwd = pathTest,
+    files = {
+      ['exer.toml'] = cfgTxt,
+    },
+  }, function()
     local js_acts = proj.getActs('javascript')
-    assert.are.equal(2, #js_acts) -- only general tasks
+
+    ut.assert.are.equal(2, #js_acts) -- only general tasks
 
     local act_ids = {}
     for _, act in ipairs(js_acts) do
       act_ids[act.id] = true
     end
-    assert.is_true(act_ids['run'])
-    assert.is_true(act_ids['lint'])
-    assert.is_nil(act_ids['test']) -- limited to Python
-    assert.is_nil(act_ids['format']) -- limited to Python
+    ut.assert.is_true(act_ids['run'])
+    ut.assert.is_true(act_ids['lint'])
+    ut.assert.is_nil(act_ids['test']) -- limited to Python
+    ut.assert.is_nil(act_ids['format']) -- limited to Python
   end)
 
-  it('tests multi-step commands', function()
+  ut.itEnv('tests multi-step commands', {
+    cwd = pathTest,
+    files = {
+      ['exer.toml'] = cfgTxt,
+    },
+  }, function()
     local python_acts = proj.getActs('python')
+
     local format_act = nil
     for _, act in ipairs(python_acts) do
       if act.id == 'format' then
@@ -73,30 +84,29 @@ acts = [
       end
     end
 
-    assert.is_true(format_act ~= nil, 'should find format task')
-    assert.are.equal('table', type(format_act.cmd), 'format command should be array')
-    assert.are.equal(2, #format_act.cmd, 'should have two steps')
+    ut.assert.is_true(format_act ~= nil, 'should find format task')
+    ut.assert.are.equal('table', type(format_act.cmd), 'format command should be array')
+    ut.assert.are.equal(2, #format_act.cmd, 'should have two steps')
   end)
 
-  it('tests variable expansion in actual tasks', function()
-    ut.withTestFile('./tmp/proj_integration_test/test.py', 'print("hello")', function()
-      ut.testCtx('./tmp/proj_integration_test/test.py', 'python')
-      local python_acts = proj.getActs('python')
+  ut.itEnv('tests variable expansion in actual tasks', {
+    cwd = pathTest,
+    currentFile = 'test.py',
+    files = {
+      ['exer.toml'] = cfgTxt,
+      ['test.py'] = 'print("hello")',
+    },
+  }, function()
+    local python_acts = proj.getActs('python')
 
-      for _, act in ipairs(python_acts) do
-        if act.id == 'run' then
-          local expanded = proj.expandVars(act.cmd)
-          assert.matches('python ./tmp/proj_integration_test/test%.py', expanded, 'run command should expand ${file}')
-        elseif act.id == 'test' then
-          local expanded = proj.expandVars(act.cmd)
-          assert.matches('pytest ./tmp/proj_integration_test/test%.py', expanded, 'test command should expand ${file}')
-        end
+    for _, act in ipairs(python_acts) do
+      if act.id == 'run' then
+        local expanded = proj.expandVars(act.cmd)
+        ut.assert.matches('python ' .. pathTest .. '/test%.py', expanded, 'run command should expand ${file}')
+      elseif act.id == 'test' then
+        local expanded = proj.expandVars(act.cmd)
+        ut.assert.matches('pytest ' .. pathTest .. '/test%.py', expanded, 'test command should expand ${file}')
       end
-    end)
-  end)
-
-  it('cleans up test environment', function()
-    vim.fn.delete(test_dir, 'rf')
-    assert.is_true(true, 'cleanup completed')
+    end
   end)
 end)

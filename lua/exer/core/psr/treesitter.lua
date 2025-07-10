@@ -1,4 +1,4 @@
-local lg = require('exer.core.log')
+local lg = require('exer.core.lg')
 local M = {}
 
 function M.findNodeByType(typeNodes)

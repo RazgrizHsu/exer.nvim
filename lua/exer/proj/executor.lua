@@ -45,7 +45,7 @@ function M.executeSequential(cmdList, actId, env, cwd, allActs)
       local refActId = getActIdFromReference(item)
       local refAct = findActById(refActId, allActs)
       if refAct then
-        co.log.debug(string.format('Expanding referenced act: %s', refActId), 'ProjExecutor')
+        co.lg.debug(string.format('Expanding referenced act: %s', refActId), 'ProjExecutor')
         local refCmd = refAct.cmd or refAct.cmds
         local expandedRefCmd = var.expandVars(refCmd)
         if type(expandedRefCmd) == 'table' then
@@ -56,7 +56,7 @@ function M.executeSequential(cmdList, actId, env, cwd, allActs)
           table.insert(combinedCmd, expandedRefCmd)
         end
       else
-        co.log.warn(string.format('Referenced act not found: %s', refActId), 'ProjExecutor')
+        co.lg.warn(string.format('Referenced act not found: %s', refActId), 'ProjExecutor')
       end
     else
       table.insert(combinedCmd, item)
@@ -77,10 +77,10 @@ function M.executeParallel(cmdList, actId, env, cwd, allActs)
       local refActId = getActIdFromReference(item)
       local refAct = findActById(refActId, allActs)
       if refAct then
-        co.log.debug(string.format('Executing referenced act: %s', refActId), 'ProjExecutor')
+        co.lg.debug(string.format('Executing referenced act: %s', refActId), 'ProjExecutor')
         M.executeAct(refAct, allActs)
       else
-        co.log.warn(string.format('Referenced act not found: %s', refActId), 'ProjExecutor')
+        co.lg.warn(string.format('Referenced act not found: %s', refActId), 'ProjExecutor')
       end
     else
       local taskName = string.format('[proj] %s (%d/%d)', actId, i, #cmdList)

@@ -1,3 +1,3 @@
 #!/usr/bin/env bash
 
-lua tests/init.lua $1
+nvim -l tests/init.lua "$@"

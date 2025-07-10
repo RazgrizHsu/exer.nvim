@@ -1,5 +1,5 @@
 local M = {}
-local log = require('exer.core.log')
+local log = require('exer.core.lg')
 
 local function getNowMs() return os.time() * 1000 + math.floor((vim.uv.hrtime() % 1e9) / 1e6) end
 

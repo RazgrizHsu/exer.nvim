@@ -10,12 +10,12 @@ describe('Configuration validator tests', function()
         { id = 'test', cmd = 'pytest', desc = 'test' },
       },
     }
-    assert.is_true(validator.validate(config))
+    ut.assert.is_true(validator.validate(config))
   end)
 
   it('requires acts field', function()
     local config = {}
-    assert.is_false(validator.validate(config))
+    ut.assert.is_false(validator.validate(config))
   end)
 
   it('requires task to have id field', function()
@@ -24,7 +24,7 @@ describe('Configuration validator tests', function()
         { cmd = 'python main.py' },
       },
     }
-    assert.is_false(validator.validate(config))
+    ut.assert.is_false(validator.validate(config))
   end)
 
   it('requires task to have cmd field', function()
@@ -33,7 +33,7 @@ describe('Configuration validator tests', function()
         { id = 'run' },
       },
     }
-    assert.is_false(validator.validate(config))
+    ut.assert.is_false(validator.validate(config))
   end)
 
   it('validates ID format', function()
@@ -42,7 +42,7 @@ describe('Configuration validator tests', function()
         { id = '123invalid', cmd = 'echo test' },
       },
     }
-    assert.is_false(validator.validate(config))
+    ut.assert.is_false(validator.validate(config))
   end)
 
   it('handles duplicate IDs by auto-renaming', function()
@@ -53,9 +53,9 @@ describe('Configuration validator tests', function()
       },
     }
     -- Validator automatically renames duplicates, so it should still pass
-    assert.is_true(validator.validate(config))
+    ut.assert.is_true(validator.validate(config))
     -- Second task should be renamed to 'run_1'
-    assert.equals('run_1', config.acts[2].id)
+    ut.assert.equals('run_1', config.acts[2].id)
   end)
 
   it('validates cmd type', function()
@@ -64,13 +64,13 @@ describe('Configuration validator tests', function()
         { id = 'run', cmd = '' },
       },
     }
-    assert.is_false(validator.validate(config1))
+    ut.assert.is_false(validator.validate(config1))
 
     local config2 = {
       acts = {
         { id = 'run', cmd = {} },
       },
     }
-    assert.is_false(validator.validate(config2))
+    ut.assert.is_false(validator.validate(config2))
   end)
 end)

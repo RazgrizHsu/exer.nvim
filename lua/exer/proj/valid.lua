@@ -89,7 +89,7 @@ local function validateAct(act)
   -- acts use id and cmd fields
   if not act.id and not act.name then return false, 'act.id or act.name is required' end
 
-  if act.id and not isValidId(act.id) then return false, 'act.id must be a valid identifier' end
+  if act.id and not isValidId(act.id) then return false, 'act.id must be a valid identifieri, get: [' .. vim.inspect(act.id) .. ']' end
 
   if act.name and not isValidName(act.name) then return false, 'act.name must be a non-empty string' end
 
@@ -144,16 +144,16 @@ local function validateApp(app)
   return true
 end
 
-function M.validate(cfg)
+function M.validate(cfg, notify)
   if type(cfg) ~= 'table' then
-    utils.msg('proj config must be a table', vim.log.levels.ERROR)
+    utils.error('proj config must be a table')
     return false
   end
 
   -- Validate acts
   if cfg.acts then
     if type(cfg.acts) ~= 'table' then
-      utils.msg('proj config.acts must be a table', vim.log.levels.ERROR)
+      if notify ~= false then utils.error('[proj] config.acts must be a table') end
       return false
     end
 
@@ -162,7 +162,7 @@ function M.validate(cfg)
     for i, act in ipairs(cfg.acts) do
       local ok, err = validateAct(act)
       if not ok then
-        utils.msg(string.format('proj config.acts[%d]: %s', i, err), vim.log.levels.ERROR)
+        if notify ~= false then utils.error(string.format('[proj] config.acts[%d]: %s', i, err)) end
         return false
       end
 

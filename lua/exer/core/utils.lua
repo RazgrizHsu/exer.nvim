@@ -5,6 +5,11 @@ function M.msg(message, level, opts)
   opts.title = opts.title or 'Exer.nvim'
   vim.notify(message, level, opts)
 end
+function M.error(message, opts)
+  opts = opts or {}
+  opts.title = opts.title or 'Exer.nvim'
+  vim.notify(message, vim.log.levels.ERROR, opts)
+end
 
 ---@param dirS string
 ---@param nameF string

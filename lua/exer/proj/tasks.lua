@@ -29,7 +29,7 @@ function M.generateBuildTask(app, lang)
 
   -- 1. First check for custom build command
   if app.build_cmd then
-    co.log.debug(string.format('Using custom build command for app: %s', app.name), 'Tasks')
+    co.lg.debug(string.format('Using custom build command for app: %s', app.name), 'Tasks')
     return {
       name = string.format('[Build] %s', app.name),
       cmd = app.build_cmd,
@@ -43,7 +43,7 @@ function M.generateBuildTask(app, lang)
   if projCfg.compilers and projCfg.compilers[lang] and projCfg.compilers[lang][appType] then
     local profile = app.profile or 'default'
     compilerCmd = projCfg.compilers[lang][appType][profile]
-    if compilerCmd then co.log.debug(string.format('Using project compiler config for app: %s', app.name), 'Tasks') end
+    if compilerCmd then co.lg.debug(string.format('Using project compiler config for app: %s', app.name), 'Tasks') end
   end
 
   -- 3. Try to get compiler from language module
@@ -52,7 +52,7 @@ function M.generateBuildTask(app, lang)
 
     if langMod and langMod.getCompileCmd then
       compilerCmd = langMod.getCompileCmd(appType, app.profile or 'default')
-      if compilerCmd then co.log.debug(string.format('Using language module compiler for app: %s', app.name), 'Tasks') end
+      if compilerCmd then co.lg.debug(string.format('Using language module compiler for app: %s', app.name), 'Tasks') end
     end
   end
 
@@ -60,7 +60,7 @@ function M.generateBuildTask(app, lang)
   if not compilerCmd then
     local compilerFn = compiler.getCompiler(lang, appType)
     if not compilerFn then
-      co.log.debug(string.format('No compiler found for app: %s (lang: %s, type: %s)', app.name, lang or 'unknown', appType), 'Tasks')
+      co.lg.debug(string.format('No compiler found for app: %s (lang: %s, type: %s)', app.name, lang or 'unknown', appType), 'Tasks')
       return nil
     end
     -- Continue with legacy compiler
@@ -138,7 +138,7 @@ function M.generateRunTask(app)
 
   -- 1. First check for custom run command
   if app.run_cmd then
-    co.log.debug(string.format('Using custom run command for app: %s', app.name), 'Tasks')
+    co.lg.debug(string.format('Using custom run command for app: %s', app.name), 'Tasks')
     cmd = app.run_cmd
   else
     -- 2. Try to get run command from language module
@@ -146,7 +146,7 @@ function M.generateRunTask(app)
     if langMod and langMod.getRunCmd then
       local runCmd = langMod.getRunCmd(appType, app.output)
       if runCmd then
-        co.log.debug(string.format('Using language module run command for app: %s', app.name), 'Tasks')
+        co.lg.debug(string.format('Using language module run command for app: %s', app.name), 'Tasks')
         -- Expand variables
         local expandVars = require('exer.proj.vars').expandVars
         runCmd = runCmd:gsub('${output}', app.output)
@@ -213,17 +213,17 @@ function M.processApps(apps, _)
 
   for _, app in ipairs(apps) do
     if not app or type(app) ~= 'table' then
-      co.log.debug('Skipping invalid app: not a table', 'Tasks')
+      co.lg.debug('Skipping invalid app: not a table', 'Tasks')
       goto continue
     end
 
     if not app.name or not app.entry or not app.output then
-      co.log.debug(string.format('Skipping incomplete app: %s', app.name or 'unnamed'), 'Tasks')
+      co.lg.debug(string.format('Skipping incomplete app: %s', app.name or 'unnamed'), 'Tasks')
       goto continue
     end
 
     local lang = compiler.inferLang(app.entry)
-    if not lang then co.log.debug(string.format('Cannot infer language for app: %s', app.name), 'Tasks') end
+    if not lang then co.lg.debug(string.format('Cannot infer language for app: %s', app.name), 'Tasks') end
 
     local buildTask = M.generateBuildTask(app, lang)
     if buildTask and buildTask.cmd and buildTask.cmd ~= '' then

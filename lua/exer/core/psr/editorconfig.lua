@@ -8,7 +8,7 @@ function M.extractExerSection(content)
   local exerContent = {}
   local currentSection = nil
 
-  local log = require('exer.core').log
+  local log = require('exer.core').lg
   log.debug('[editorconfig] Extracting exer section from ' .. #lines .. ' lines')
 
   for _, line in ipairs(lines) do
