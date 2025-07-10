@@ -80,8 +80,8 @@ end
 
 function M.find()
   local rt = co.io.getRoot()
-  local config = require('exer.config')
-  local opts = config.get()
+  local cfg = require('exer.config')
+  local opts = cfg.get()
 
   local cfgFs
   if opts.config_files and type(opts.config_files) == 'table' then

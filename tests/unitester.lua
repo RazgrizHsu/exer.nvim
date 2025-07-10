@@ -315,15 +315,43 @@ function M.createTestFile(path, content)
   return false
 end
 
-function M.withTestFile(path, content, callback)
+local function inferFileType(path)
+  local ext = path:match('%.([^%.]*)$')
+  if not ext then return 'text' end
+
+  local extMap = {
+    py = 'python',
+    c = 'c',
+    cpp = 'cpp',
+    js = 'javascript',
+    ts = 'typescript',
+    lua = 'lua',
+    sh = 'sh',
+    go = 'go',
+    rs = 'rust',
+    java = 'java',
+    kt = 'kotlin',
+    swift = 'swift',
+    dart = 'dart',
+  }
+
+  return extMap[ext] or ext
+end
+
+function M.withTestFile(path, content, filetype, callback)
+  if type(filetype) == 'function' then
+    callback = filetype
+    filetype = nil
+  end
+
   M.createTestFile(path, content)
   local octx = {
     filepath = M.ctx.filepath,
     filetype = M.ctx.filetype,
   }
-  -- Update context for this test
+
   M.ctx.filepath = path
-  M.ctx.filetype = M.ctx.filetype
+  M.ctx.filetype = filetype or inferFileType(path)
   M.setup()
 
   local success, result = pcall(callback)
