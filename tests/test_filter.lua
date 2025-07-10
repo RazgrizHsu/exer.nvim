@@ -1,10 +1,9 @@
--- Filetype filter tests
-local helper = require('tests.helper')
-
-helper.makeFakeVim()
-local proj = require('exer.proj')
+local ut = require('tests.unitester')
+ut.setup()
 
 describe('Filetype filter tests', function()
+  local proj = require('exer.proj')
+
   it('filters by single filetype', function()
     local acts = {
       { id = 'py', cmd = 'python', when = 'python' },

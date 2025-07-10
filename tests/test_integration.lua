@@ -1,11 +1,9 @@
--- Integration tests
-local helper = require('tests.helper')
-
-helper.makeFakeVim()
+local ut = require('tests.unitester')
+ut.setup()
 local proj = require('exer.proj')
 
 describe('Integration tests', function()
-  local test_dir = '/tmp/proj_integration_test'
+  local test_dir = './tmp/proj_integration_test'
   local test_config = test_dir .. '/exec.toml'
 
   it('sets up test environment', function()
@@ -81,17 +79,20 @@ acts = [
   end)
 
   it('tests variable expansion in actual tasks', function()
-    local python_acts = proj.getActs('python')
+    ut.withTestFile('./tmp/proj_integration_test/test.py', 'print("hello")', function()
+      ut.testCtx('./tmp/proj_integration_test/test.py', 'python')
+      local python_acts = proj.getActs('python')
 
-    for _, act in ipairs(python_acts) do
-      if act.id == 'run' then
-        local expanded = proj.expandVars(act.cmd)
-        assert.matches('/tmp/test%.py', expanded, 'run command should expand ${file}')
-      elseif act.id == 'test' then
-        local expanded = proj.expandVars(act.cmd)
-        assert.matches('/tmp/test%.py', expanded, 'test command should expand ${file}')
+      for _, act in ipairs(python_acts) do
+        if act.id == 'run' then
+          local expanded = proj.expandVars(act.cmd)
+          assert.matches('python ./tmp/proj_integration_test/test%.py', expanded, 'run command should expand ${file}')
+        elseif act.id == 'test' then
+          local expanded = proj.expandVars(act.cmd)
+          assert.matches('pytest ./tmp/proj_integration_test/test%.py', expanded, 'test command should expand ${file}')
+        end
       end
-    end
+    end)
   end)
 
   it('cleans up test environment', function()

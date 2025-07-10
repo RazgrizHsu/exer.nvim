@@ -1,18 +1,7 @@
 local M = {}
+local co = require('exer.core')
 
 function M.expandVars(cmd)
-  local co = require('exer.core')
-
-  if type(cmd) == 'table' then
-    local exp = {}
-    for _, c in ipairs(cmd) do
-      table.insert(exp, M.expandVars(c))
-    end
-    local result = table.concat(exp, ' && ')
-    co.log.debug('[expandVars] Array result: ' .. result, 'VarsDebug')
-    return result
-  end
-
   local vars = {
     file = vim.api.nvim_buf_get_name(0),
     filename = vim.fn.expand('%:t'),
@@ -28,13 +17,26 @@ function M.expandVars(cmd)
     stem = vim.fn.expand('%:t'),
   }
 
-  local exp = cmd
-  for var, val in pairs(vars) do
-    local safeVal = val:gsub('%%', '%%%%')
-    exp = exp:gsub('%${' .. var .. '}', safeVal)
+  local function expandSysVars(str)
+    if type(str) ~= 'string' then return str end
+
+    local exp = str
+    for var, val in pairs(vars) do
+      local safeVal = val:gsub('%%', '%%%%')
+      exp = exp:gsub('%${' .. var .. '}', safeVal)
+    end
+    return exp
   end
 
-  return exp
+  if type(cmd) == 'table' then
+    local result = {}
+    for _, c in ipairs(cmd) do
+      table.insert(result, expandSysVars(c))
+    end
+    return result
+  else
+    return expandSysVars(cmd)
+  end
 end
 
 return M

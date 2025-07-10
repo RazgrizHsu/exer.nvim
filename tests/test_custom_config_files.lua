@@ -1,23 +1,11 @@
--- Set up Lua path
-local script_dir = arg[0]:match('(.*/)')
-local base_dir = script_dir .. '../'
-package.path = base_dir .. 'lua/?.lua;' .. base_dir .. 'lua/?/init.lua;' .. base_dir .. '?.lua;' .. base_dir .. '?/init.lua;' .. (package.path or '')
-
-local helper = require('tests.helper')
-
----@diagnostic disable-next-line: lowercase-global
-vim = helper.makeFakeVim()
-
-local describe = helper.describe
-local it = helper.it
-local assert = helper.assert
-
--- Mock the required modules
-local config = require('exer.config')
-local find = require('exer.proj.find')
-local co = require('exer.core')
+local ut = require('tests.unitester')
+ut.setup()
 
 describe('Custom config files', function()
+  local config = require('exer.config')
+  local find = require('exer.proj.find')
+  local co = require('exer.core')
+
   it('should allow custom config files in setup', function()
     config.setup({
       config_files = {

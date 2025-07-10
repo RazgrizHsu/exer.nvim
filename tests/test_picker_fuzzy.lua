@@ -1,5 +1,5 @@
--- Simple fuzzy matching tests
-local helper = require('tests.helper')
+local ut = require('tests.unitester')
+ut.setup()
 
 -- Direct test of the fuzzy matching logic
 local function fuzzyMatch(text, query)

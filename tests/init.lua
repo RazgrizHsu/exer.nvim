@@ -1,56 +1,47 @@
----@diagnostic disable: lowercase-global
+_G.utmode = nil
+if arg[1] then
+    _G.utmode = arg[1]
+end
 
--- Set up Lua path
-local script_dir = arg[0]:match('(.*/)')
-local base_dir = script_dir .. '../'
--- Add path containing exer modules (adjust for new lua/exer structure)
-package.path = base_dir .. 'lua/?.lua;' .. base_dir .. 'lua/?/init.lua;' .. base_dir .. '?.lua;' .. base_dir .. '?/init.lua;' .. (package.path or '')
+local dirSct = arg[0]:match('(.*/)')
+local dirBse = dirSct .. '../'
+package.path = dirBse .. 'lua/?.lua;' .. dirBse .. 'lua/?/init.lua;' .. dirBse .. '?.lua;' .. dirBse .. '?/init.lua;' .. (package.path or '')
 
--- Load test helper module
-local helper = require('tests.helper')
 
--- Set up vim API mock
+local ut = require('tests.unitester')
 
-vim = helper.makeFakeVim()
-describe = helper.describe
-it = helper.it
-assert = helper.assert
+ut.setup()
 
--- Load main module (skip because it needs vim API)
--- require('exer')
 
 -- Dynamically scan test files
-local function scan_test_files()
-  local test_files = {}
-  local handle = io.popen('find "' .. script_dir .. '" -name "test_*.lua" -type f')
-  if handle then
-    for line in handle:lines() do
-      local filename = line:match('([^/]+)%.lua$')
-      if filename then table.insert(test_files, 'tests.' .. filename) end
+local function scan()
+  local fss = {}
+  local hnd = io.popen('find "' .. dirSct .. '" -name "test_*.lua" -type f')
+  if hnd then
+    for line in hnd:lines() do
+      local fnm = line:match('([^/]+)%.lua$')
+      if fnm then table.insert(fss, 'tests.' .. fnm) end
     end
-    handle:close()
+    hnd:close()
   end
-  return test_files
+  return fss
 end
 
 print('🚀 Starting test execution...\n')
 
-local test_modules = scan_test_files()
-for _, module in ipairs(test_modules) do
-  local ok, err = pcall(require, module)
+local tmods = scan()
+for _, mod in ipairs(tmods) do
+  local ok, err = pcall(require, mod)
   if not ok then
-    print('❌ Failed to load test module: ' .. module)
+    print('❌ Failed to load test module: ' .. mod)
     print('   Error: ' .. tostring(err))
-    helper.stats.failed = helper.stats.failed + 1
-    helper.stats.total = helper.stats.total + 1
+    ut.stats.failed = ut.stats.failed + 1
+    ut.stats.total = ut.stats.total + 1
   end
 end
 
--- Show test results
-local success = helper.printSummary()
-
--- Set exit code based on results
-if success then
+local ok = ut.summary()
+if ok then
   os.exit(0)
 else
   os.exit(1)

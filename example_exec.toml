@@ -1,0 +1,32 @@
+[exer]
+acts = [
+  {
+    id = "hello",
+    cmd = "echo 'Hello from act hello'",
+    desc = "Simple greeting"
+  },
+  {
+    id = "world",
+    cmd = "echo 'World from act world'",
+    desc = "Simple world message"
+  },
+  {
+    id = "greeting",
+    cmd = "exec[\"hello\"] && exec[\"world\"]",
+    desc = "Combined greeting using act references"
+  },
+  {
+    id = "multi_step",
+    cmd = [
+      "echo 'Step 1: Starting multi-step process'",
+      "exec[\"hello\"]",
+      "echo 'Step 3: Finished multi-step process'"
+    ],
+    desc = "Multi-step task with act reference"
+  },
+  {
+    id = "nested",
+    cmd = "echo 'Before greeting' && exec[\"greeting\"] && echo 'After greeting'",
+    desc = "Nested act reference example"
+  }
+]

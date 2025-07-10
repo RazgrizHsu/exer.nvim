@@ -69,10 +69,15 @@ function M.convertIniToToml(content)
         key = key:match('^%s*(.-)%s*$')
         value = value:match('^%s*(.-)%s*$')
 
-        -- Remove quotes if present
-        if value:match('^".*"$') or value:match("^'.*'$") then value = value:sub(2, -2) end
-
-        currentAct[key] = value
+        -- Handle array format: [ "a", "b" ]
+        if value:match('^%[.*%]$') then
+          -- Keep array format as is for TOML conversion
+          currentAct[key] = value
+        else
+          -- Remove quotes if present for string values
+          if value:match('^".*"$') or value:match("^'.*'$") then value = value:sub(2, -2) end
+          currentAct[key] = value
+        end
       end
     end
   end
@@ -86,7 +91,12 @@ function M.convertIniToToml(content)
     for _, act in ipairs(acts) do
       table.insert(tomlLines, '[[exer.acts]]')
       for k, v in pairs(act) do
-        table.insert(tomlLines, string.format('%s = "%s"', k, v))
+        -- Check if value is an array format
+        if v:match('^%[.*%]$') then
+          table.insert(tomlLines, string.format('%s = %s', k, v))
+        else
+          table.insert(tomlLines, string.format('%s = "%s"', k, v))
+        end
       end
       table.insert(tomlLines, '')
     end

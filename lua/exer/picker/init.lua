@@ -64,7 +64,8 @@ function M.show()
   local validProjCount = 0
   for _, act in ipairs(projActs) do
     if act and type(act) == 'table' and act.id and act.id ~= '' then
-      if act.cmd and (type(act.cmd) == 'string' or (type(act.cmd) == 'table' and #act.cmd > 0)) then
+      local actCmd = act.cmd or act.cmds
+      if actCmd and (type(actCmd) == 'string' or (type(actCmd) == 'table' and #actCmd > 0)) then
         validProjCount = validProjCount + 1
         local desc = act.desc and (' - ' .. act.desc) or ''
         table.insert(optsLang, {
@@ -133,22 +134,10 @@ function M.show()
     if not item or item.value == '' or item.value == 'separator' then return end
 
     if item.type == 'Proj' then
-      -- Execute proj task
-      local rnr = require('exer.core.runner')
+      -- Execute proj task using executor
+      local executor = require('exer.proj.executor')
       local act = item.act
-      local cmd = proj.expandVars(act.cmd)
-      local env = act.env or {}
-      local cwd = act.cwd or vim.fn.getcwd() -- Default to current working directory (project root)
-
-      if type(cmd) == 'table' then
-        for i, c in ipairs(cmd) do
-          local taskName = string.format('[proj] %s (%d/%d)', act.id, i, #cmd)
-          rnr.run({ name = taskName, cmd = c, env = env, cwd = cwd })
-        end
-      else
-        local taskName = string.format('[proj] %s', act.id)
-        rnr.run({ name = taskName, cmd = cmd, env = env, cwd = cwd })
-      end
+      executor.executeAct(act, projActs)
     else
       -- Execute mods task (languages, build tools, test frameworks)
       local ok, ex = pcall(mods.runAct, item.value)

@@ -1,7 +1,5 @@
--- Configuration validator tests
-local helper = require('tests.helper')
-
-helper.makeFakeVim()
+local ut = require('tests.unitester')
+ut.setup()
 local validator = require('exer.proj.valid')
 
 describe('Configuration validator tests', function()

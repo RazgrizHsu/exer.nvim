@@ -8,11 +8,14 @@ local state = {
   autoCmdGrp = nil,
   focusId = nil,
   autoScroll = true,
+  taskTabs = {},
+  activeTabIndex = 1,
 }
 
 local function focus(taskId)
   if state.focusId ~= taskId then
     state.focusId = taskId
+    M.addTab(taskId)
     if taskId and windows.isValid('panel') then
       local curBuf = vim.api.nvim_win_get_buf(windows.palW)
       local bufName = vim.api.nvim_buf_get_name(curBuf)
@@ -161,14 +164,57 @@ function M.setAutoScroll(enabled) state.autoScroll = enabled end
 
 function M.clearFocus() state.focusId = nil end
 
-function M.handleClearedTasks()
-  if state.focusId then
-    local tskSel = co.tsk.get(state.focusId)
-    if tskSel and (tskSel.status == 'completed' or tskSel.status == 'failed') then
-      state.focusId = nil
-      render.renderPlaceholder('Task was cleared')
-      windows.focus('list')
+function M.addTab(taskId)
+  for _, tabId in ipairs(state.taskTabs) do
+    if tabId == taskId then return end
+  end
+  table.insert(state.taskTabs, taskId)
+  state.activeTabIndex = #state.taskTabs
+end
+
+function M.removeTab(taskId)
+  for i, tabId in ipairs(state.taskTabs) do
+    if tabId == taskId then
+      table.remove(state.taskTabs, i)
+      if state.activeTabIndex > #state.taskTabs then state.activeTabIndex = math.max(1, #state.taskTabs) end
+      if state.activeTabIndex == i and #state.taskTabs > 0 then state.focusId = state.taskTabs[state.activeTabIndex] end
+      break
     end
+  end
+end
+
+function M.switchTab(index)
+  if index > 0 and index <= #state.taskTabs then
+    state.activeTabIndex = index
+    state.focusId = state.taskTabs[index]
+    return state.focusId
+  end
+  return nil
+end
+
+function M.getTaskTabs() return state.taskTabs end
+
+function M.getActiveTabIndex() return state.activeTabIndex end
+
+function M.hasMultipleTabs() return #state.taskTabs > 1 end
+
+function M.handleClearedTasks()
+  local clearedTasks = {}
+  for i = #state.taskTabs, 1, -1 do
+    local taskId = state.taskTabs[i]
+    local tsk = co.tsk.get(taskId)
+    if not tsk or tsk.status == 'completed' or tsk.status == 'failed' then
+      table.insert(clearedTasks, taskId)
+      M.removeTab(taskId)
+    end
+  end
+
+  if #state.taskTabs == 0 then
+    state.focusId = nil
+    render.renderPlaceholder('All tasks cleared')
+    windows.focus('list')
+  elseif state.focusId and co.tsk.get(state.focusId) then
+    render.renderPanel(state.focusId, state.autoScroll)
   end
 end
 

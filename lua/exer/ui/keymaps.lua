@@ -10,13 +10,24 @@ local function updatePanelFromCursor(skipFocus)
   local t = render.getSelectedTask()
   if t then
     events.setFocusTask(t.id)
-    if not skipFocus then events.showTaskPanel(t.id) end
+    if not skipFocus then
+      events.showTaskPanel(t.id)
+      -- For tabs functionality, update active tab when focusing a task
+      if events.hasMultipleTabs() then
+        local taskTabs = events.getTaskTabs()
+        for i, tabTaskId in ipairs(taskTabs) do
+          if tabTaskId == t.id then
+            events.switchTab(i)
+            break
+          end
+        end
+      end
+    end
     if windows.isValidBuf('panel') then render.renderPanel(t.id, events.getAutoScroll()) end
   end
   -- if no task is selected, keep current panel state unchanged
 end
 
--- Smart navigation helper
 function M.smartNav(direction)
   local current_win = vim.api.nvim_get_current_win()
   local ui_is_open = windows.isOpen()
@@ -140,7 +151,9 @@ function M.setupListKeymaps(buffer)
 
   -- Mouse click: Update panel content
   vim.keymap.set('n', '<LeftMouse>', function()
-    vim.cmd('normal! <LeftMouse>')
+    -- Use nvim_win_set_cursor instead of normal! command to avoid modifiable issues
+    local pos = vim.fn.getmousepos()
+    if pos.winid == vim.api.nvim_get_current_win() and pos.line > 0 then vim.api.nvim_win_set_cursor(0, { pos.line, pos.column - 1 }) end
     updatePanelFromCursor()
   end, opts)
 
@@ -208,6 +221,16 @@ function M.setupPanelKeymaps(buffer)
   vim.keymap.set('n', '<Tab>', function()
     if windows.isValid('list') then windows.focus('list') end
   end, opts)
+
+  -- Tab switching (only when multiple tabs exist)
+  for i = 1, 9 do
+    vim.keymap.set('n', tostring(i), function()
+      if events.hasMultipleTabs() then
+        local taskId = events.switchTab(i)
+        if taskId then render.renderPanel(taskId, events.getAutoScroll()) end
+      end
+    end, opts)
+  end
 
   -- Smart navigation
   vim.keymap.set('n', '<C-h>', function() M.smartNav('left') end, opts)

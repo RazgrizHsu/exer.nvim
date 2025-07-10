@@ -1,12 +1,13 @@
----@diagnostic disable: unused-local
-
 local M = {}
 
 M.stats = { passed = 0, failed = 0, total = 0 }
+M.ctx = { filepath = './tmp/test.py', filetype = 'py' }
 
 function M.describe(name, func)
-  print('\n📋 ' .. name)
-  print(string.rep('-', 50))
+  if not utmode then
+    print('\n📋 ' .. name)
+    print(string.rep('-', 50))
+  end
   func()
 end
 
@@ -15,39 +16,42 @@ function M.it(name, func)
   local ok, err = pcall(func)
   if ok then
     M.stats.passed = M.stats.passed + 1
-    print('✅ ' .. name)
+    if not utmode then print('✅ ' .. name) end
   else
     M.stats.failed = M.stats.failed + 1
     print('❌ ' .. name)
-    print('   錯誤: ' .. tostring(err))
+    print('   Error: ' .. tostring(err))
+    print('')
   end
 end
 
 M.assert = {
   are = {
     equal = function(expected, actual, msg)
-      if expected ~= actual then error(string.format('期望 %s，實際 %s。%s', tostring(expected), tostring(actual), msg or '')) end
+      if expected ~= actual then error(string.format('expect `%s`，actual `%s`.  %s', tostring(expected), tostring(actual), msg or ''), 2) end
     end,
   },
   is_true = function(val, msg)
-    if not val then error('期望 true，實際 ' .. tostring(val) .. '。' .. (msg or '')) end
+    if not val then error('expect true，actual ' .. tostring(val) .. '。' .. (msg or ''), 2) end
   end,
   is_false = function(val, msg)
-    if val then error('期望 false，實際 ' .. tostring(val) .. '。' .. (msg or '')) end
+    if val then error('expect false，actual ' .. tostring(val) .. '。' .. (msg or ''), 2) end
   end,
   is_nil = function(val, msg)
-    if val ~= nil then error('Expected nil, got ' .. tostring(val) .. '. ' .. (msg or '')) end
+    if val ~= nil then error('Expected nil, got ' .. tostring(val) .. '. ' .. (msg or ''), 2) end
   end,
   matches = function(pattern, str, msg)
-    if not str:match(pattern) then error(string.format('String "%s" does not match pattern "%s". %s', str, pattern, msg or '')) end
+    if not str:match(pattern) then error(string.format('String "%s" does not match pattern "%s". %s', str, pattern, msg or ''), 2) end
   end,
   equals = function(expected, actual, msg)
-    if expected ~= actual then error(string.format('Expected %s, got %s. %s', tostring(expected), tostring(actual), msg or '')) end
+    if expected ~= actual then error(string.format('Expected %s, got %s. %s', tostring(expected), tostring(actual), msg or ''), 2) end
   end,
 }
 
-function M.printSummary()
-  print('\n📊 Test Results Summary')
+function M.summary()
+  print('')
+  print(string.rep('=', 50))
+  print('📊 Test Results Summary')
   print(string.rep('=', 50))
   print(string.format('Total: %d', M.stats.total))
   print(string.format('✅ Passed: %d', M.stats.passed))
@@ -63,7 +67,17 @@ function M.printSummary()
   end
 end
 
-function M.makeFakeVim()
+function M.setup()
+  local dirSct = arg[0]:match('(.*/)')
+  local dirBse = dirSct .. '../'
+  package.path = dirBse .. 'lua/?.lua;' .. dirBse .. 'lua/?/init.lua;' .. dirBse .. '?.lua;' .. dirBse .. '?/init.lua;' .. (package.path or '')
+
+  -- package.path = vim.fn.getcwd() .. '/lua/?.lua;' .. package.path
+
+  -- Force reload of proj modules to use new vim instance
+  package.loaded['exer.proj.vars'] = nil
+  package.loaded['exer.proj'] = nil
+
   local fake = {
     fn = {
       readfile = function(path)
@@ -87,7 +101,10 @@ function M.makeFakeVim()
           os.execute('rm -f ' .. path)
         end
       end,
-      getcwd = function() return '/tmp/test_proj' end,
+      getcwd = function()
+        local filepath = M.ctx.filepath
+        return filepath:match('(.*)/[^/]*$') or '.'
+      end,
       systemlist = function(cmd) return {} end,
       filereadable = function(path)
         local f = io.open(path, 'r')
@@ -102,20 +119,29 @@ function M.makeFakeVim()
           return path:match('[^/]*$')
         elseif mods == ':p:h' then
           return path:match('(.*/)')
+        elseif mods == ':t:r' then
+          local name = path:match('[^/]*$')
+          return name:match('(.*)%.[^%.]*$') or name
         end
         return path
       end,
       expand = function(expr)
+        local fp = M.ctx.filepath
         if expr == '%:p:h' then
-          return '/tmp'
+          return fp:match('(.*)/[^/]*$') or '.'
         elseif expr == '%:t:r' then
-          return 'test'
+          local name = fp:match('[^/]*$')
+          return name:match('(.*)%.[^%.]*$') or name
         elseif expr == '%:e' then
-          return 'py'
+          return fp:match('%.([^%.]*)$') or ''
         elseif expr == '%:t' then
-          return 'test.py'
+          return fp:match('[^/]*$') or ''
         elseif expr == '%:p:r' then
-          return '/tmp/test'
+          return fp:match('(.*)%.[^%.]*$') or fp
+        elseif expr == '%:p' then
+          return fp
+        elseif expr == '%' then
+          return fp
         else
           return expr
         end
@@ -202,12 +228,12 @@ function M.makeFakeVim()
       maparg = function(lhs, mode, abbr, dict) return '' end,
     },
     api = {
-      nvim_buf_get_name = function(ids) return '/tmp/test.py' end,
+      nvim_buf_get_name = function(bufnr) return M.ctx.filepath end,
       nvim_command = function() end,
       nvim_set_current_dir = function(dir) end,
       nvim_set_keymap = function(mode, lhs, rhs, opts) end,
       nvim_get_option_value = function(opt, ctx)
-        if opt == 'filetype' then return 'py' end
+        if opt == 'filetype' then return M.ctx.filetype end
         return ''
       end,
     },
@@ -253,8 +279,75 @@ function M.makeFakeVim()
       end
       return result
     end,
+    tbl_extend = function(behavior, ...)
+      local result = {}
+      for i = 1, select('#', ...) do
+        local t = select(i, ...)
+        if t then
+          for k, v in pairs(t) do
+            result[k] = v
+          end
+        end
+      end
+      return result
+    end,
   }
+
+  -- 統一設定全域 vim 和 _G.vim
+  vim = fake
+  _G.vim = fake
+  describe = M.describe
+  it = M.it
+  assert = M.assert
 
   return fake
 end
+
+function M.createTestFile(path, content)
+  local dir = path:match('(.*)/[^/]*$')
+  if dir then os.execute('mkdir -p ' .. dir) end
+  local f = io.open(path, 'w')
+  if f then
+    f:write(content or '')
+    f:close()
+    return true
+  end
+  return false
+end
+
+function M.withTestFile(path, content, callback)
+  M.createTestFile(path, content)
+  local octx = {
+    filepath = M.ctx.filepath,
+    filetype = M.ctx.filetype,
+  }
+  -- Update context for this test
+  M.ctx.filepath = path
+  M.ctx.filetype = M.ctx.filetype
+  M.setup()
+
+  local success, result = pcall(callback)
+
+  M.ctx.filepath = octx.filepath
+  M.ctx.filetype = octx.filetype
+  M.setup()
+
+  local dir = path:match('(.*)/[^/]*$')
+  if dir and dir ~= '.' then
+    os.execute('rm -rf ' .. dir)
+  else
+    os.execute('rm -f ' .. path)
+  end
+
+  if not success then error(result) end
+  return result
+end
+
+function M.testCtx(filepath, filetype)
+  M.ctx.filepath = filepath
+  M.ctx.filetype = filetype
+  -- Force reload the fake vim to pick up new context
+  M.setup()
+end
+
 return M

@@ -106,7 +106,15 @@ function M.renderPanel(tid, autoScroll)
   if not t then return end
 
   if palW and vim.api.nvim_win_is_valid(palW) then
-    local title = string.format('─TaskPanel #%d - %s', t.id, t.name or 'Unknown')
+    local title
+    local events = require('exer.ui.events')
+    if events.hasMultipleTabs() then
+      local activeTabIndex = events.getActiveTabIndex()
+      local taskTabs = events.getTaskTabs()
+      title = string.format('─TaskPanel (%d/%d) - %s', activeTabIndex, #taskTabs, t.name or 'Unknown')
+    else
+      title = string.format('─TaskPanel #%d - %s', t.id, t.name or 'Unknown')
+    end
     vim.api.nvim_win_set_config(palW, { title = title })
   end
 
@@ -114,6 +122,28 @@ function M.renderPanel(tid, autoScroll)
   local hlAll = {}
 
   local icon = fmtSte(t.status)
+
+  -- Add tabs if multiple tasks exist (lazy load events to avoid circular dependency)
+  local events = require('exer.ui.events')
+  if events.hasMultipleTabs() then
+    local tabsLine = ''
+    local taskTabs = events.getTaskTabs()
+    local activeTabIndex = events.getActiveTabIndex()
+
+    for i, tabTaskId in ipairs(taskTabs) do
+      local tabTask = co.tsk.get(tabTaskId)
+      if tabTask then
+        local tabName = string.format('[%d] %s', i, tabTask.name or 'Task')
+        if i == activeTabIndex then tabName = tabName .. '*' end
+        if i > 1 then tabsLine = tabsLine .. '  ' end
+        tabsLine = tabsLine .. tabName
+      end
+    end
+
+    table.insert(lines, tabsLine)
+    table.insert(lines, '─────────────────────────────────────────')
+  end
+
   table.insert(lines, string.format('%s─Task #%d: %s', icon, t.id, t.name))
   table.insert(lines, '─────────────────────────────────────────')
 

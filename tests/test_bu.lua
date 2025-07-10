@@ -1,10 +1,8 @@
-local helper = require('tests.helper')
-
--- Setup test environment
-helper.makeFakeVim()
+local ut = require('tests.unitester')
+ut.setup()
 
 -- Create temporary directory
-local test_dir = '/tmp/exer_bu_test'
+local test_dir = './tmp/exer_bu_test'
 vim.fn.mkdir(test_dir, 'p')
 
 -- Test data

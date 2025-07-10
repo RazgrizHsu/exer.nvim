@@ -93,9 +93,11 @@ local function validateAct(act)
 
   if act.name and not isValidName(act.name) then return false, 'act.name must be a non-empty string' end
 
-  if not act.cmd then return false, 'act.cmd is required' end
+  if not act.cmd and not act.cmds then return false, 'act.cmd or act.cmds is required' end
 
-  if not isValidCmd(act.cmd) then return false, 'act.cmd must be a non-empty string or array of strings' end
+  if act.cmd and not isValidCmd(act.cmd) then return false, 'act.cmd must be a non-empty string or array of strings' end
+
+  if act.cmds and not isValidCmd(act.cmds) then return false, 'act.cmds must be a non-empty string or array of strings' end
 
   if act.desc and type(act.desc) ~= 'string' then return false, 'act.desc must be a string' end
 

@@ -1,6 +1,5 @@
-local helper = require('tests.helper')
-
-helper.makeFakeVim()
+local ut = require('tests.unitester')
+ut.setup()
 
 describe('Real exec.toml file parsing', function()
   it('reads and parses the actual exec.toml file', function()

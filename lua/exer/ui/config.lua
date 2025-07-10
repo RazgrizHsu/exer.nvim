@@ -5,6 +5,8 @@ local _cfgDefaults = {
   list_width = 36, -- Task list width (number or float for percentage)
   auto_toggle = false, -- Auto show detail on open
   auto_scroll = true, -- Auto scroll to bottom
+  max_tabs = 9, -- Maximum number of tabs
+  show_tab_numbers = true, -- Show tab numbers
   keymaps = {
     stop_task = 'x', -- Key to stop task
     clear_completed = 'c', -- Key to clear completed tasks
@@ -19,6 +21,8 @@ M.height = nil
 M.list_width = nil
 M.auto_toggle = nil
 M.auto_scroll = nil
+M.max_tabs = nil
+M.show_tab_numbers = nil
 M.keymaps = nil
 
 function M.setup(opts)
@@ -28,6 +32,8 @@ function M.setup(opts)
   M.list_width = _cfg.list_width
   M.auto_toggle = _cfg.auto_toggle
   M.auto_scroll = _cfg.auto_scroll
+  M.max_tabs = _cfg.max_tabs
+  M.show_tab_numbers = _cfg.show_tab_numbers
   M.keymaps = _cfg.keymaps
 
   return _cfg
@@ -45,6 +51,8 @@ M.height = _cfgDefaults.height
 M.list_width = _cfgDefaults.list_width
 M.auto_toggle = _cfgDefaults.auto_toggle
 M.auto_scroll = _cfgDefaults.auto_scroll
+M.max_tabs = _cfgDefaults.max_tabs
+M.show_tab_numbers = _cfgDefaults.show_tab_numbers
 M.keymaps = _cfgDefaults.keymaps
 
 return M

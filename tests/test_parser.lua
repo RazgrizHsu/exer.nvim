@@ -1,7 +1,6 @@
--- TOML parser tests
-local helper = require('tests.helper')
+local ut = require('tests.unitester')
+ut.setup()
 
-helper.makeFakeVim()
 local co = require('exer.core')
 local toml_parser = co.psr.toml
 local proj_parser = require('exer.proj.parser')
@@ -88,8 +87,6 @@ acts = [
     assert.are.equal(2, #result.acts)
 
     local first_act = result.acts[1]
-    print('DEBUG: first_act.env type:', type(first_act.env))
-    print('DEBUG: first_act.env content:', tostring(first_act.env))
     assert.are.equal('table', type(first_act.env))
     assert.are.equal('string', type(first_act.env.DEBUG))
     assert.are.equal('1', first_act.env.DEBUG)
@@ -258,5 +255,146 @@ env = {
     assert.are.equal('table', type(app2.env))
     assert.are.equal('ci', app2.env.TEST_ENV)
     assert.are.equal('30', app2.env.LUA_TEST_TIMEOUT)
+  end)
+end)
+
+describe('JSON parser tests', function()
+  it('parses basic JSON configuration', function()
+    local json = [[
+{
+  "exer": {
+    "acts": [
+      {
+        "id": "run",
+        "cmd": "python main.py",
+        "desc": "Run the application"
+      }
+    ]
+  }
+}
+]]
+    local result = proj_parser.parse(json, 'json')
+    assert.are.equal('table', type(result))
+    assert.are.equal('table', type(result.acts))
+    assert.are.equal(1, #result.acts)
+    assert.are.equal('run', result.acts[1].id)
+    assert.are.equal('python main.py', result.acts[1].cmd)
+    assert.are.equal('Run the application', result.acts[1].desc)
+  end)
+
+  it('parses JSON with array commands', function()
+    local json = [[
+{
+  "exer": {
+    "acts": [
+      {
+        "id": "sequential",
+        "cmd": ["build", "test"],
+        "desc": "Sequential execution"
+      },
+      {
+        "id": "parallel",
+        "cmds": ["lint", "format"],
+        "desc": "Parallel execution"
+      }
+    ]
+  }
+}
+]]
+    local result = proj_parser.parse(json, 'json')
+    assert.are.equal('table', type(result))
+    assert.are.equal('table', type(result.acts))
+    assert.are.equal(2, #result.acts)
+
+    -- Check sequential act
+    assert.are.equal('sequential', result.acts[1].id)
+    assert.are.equal('table', type(result.acts[1].cmd))
+    assert.are.equal(2, #result.acts[1].cmd)
+    assert.are.equal('build', result.acts[1].cmd[1])
+    assert.are.equal('test', result.acts[1].cmd[2])
+
+    -- Check parallel act
+    assert.are.equal('parallel', result.acts[2].id)
+    assert.are.equal('table', type(result.acts[2].cmds))
+    assert.are.equal(2, #result.acts[2].cmds)
+    assert.are.equal('lint', result.acts[2].cmds[1])
+    assert.are.equal('format', result.acts[2].cmds[2])
+  end)
+
+  it('parses JSON with environment and cwd', function()
+    local json = [[
+{
+  "exer": {
+    "acts": [
+      {
+        "id": "test",
+        "cmd": "npm test",
+        "cwd": "tests/",
+        "env": {
+          "NODE_ENV": "test",
+          "DEBUG": "true"
+        }
+      }
+    ]
+  }
+}
+]]
+    local result = proj_parser.parse(json, 'json')
+    assert.are.equal('table', type(result))
+    assert.are.equal(1, #result.acts)
+    assert.are.equal('test', result.acts[1].id)
+    assert.are.equal('npm test', result.acts[1].cmd)
+    assert.are.equal('tests/', result.acts[1].cwd)
+    assert.are.equal('table', type(result.acts[1].env))
+    assert.are.equal('test', result.acts[1].env.NODE_ENV)
+    assert.are.equal('true', result.acts[1].env.DEBUG)
+  end)
+
+  it('parses JSON with root-level acts', function()
+    local json = [[
+{
+  "acts": [
+    {
+      "id": "simple",
+      "cmd": "echo hello"
+    }
+  ]
+}
+]]
+    local result = proj_parser.parse(json, 'json')
+    assert.are.equal('table', type(result))
+    assert.are.equal(1, #result.acts)
+    assert.are.equal('simple', result.acts[1].id)
+    assert.are.equal('echo hello', result.acts[1].cmd)
+  end)
+
+  it('handles empty JSON configuration', function()
+    local json = [[
+{
+  "exer": {
+    "acts": []
+  }
+}
+]]
+    local result = proj_parser.parse(json, 'json')
+    assert.are.equal('table', type(result))
+    assert.are.equal(0, #result.acts)
+  end)
+
+  it('handles invalid JSON gracefully', function()
+    local json = [[
+{
+  "exer": {
+    "acts": [
+      {
+        "id": "invalid"
+        "cmd": "missing comma"
+      }
+    ]
+  }
+}
+]]
+    local result = proj_parser.parse(json, 'json')
+    assert.are.equal(nil, result)
   end)
 end)
