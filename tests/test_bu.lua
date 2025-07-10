@@ -196,19 +196,12 @@ describe('nodejs.lua module tests', function()
     return opts
   end
 
-  -- To make json_decode work, we need to mock it
+  -- To make json_decode work, we need to use dkjson
+  local json = require('exer.core.psr.json')
   vim.fn.json_decode = function(str)
-    if str:match('"name"') then
-      return {
-        name = 'test-project',
-        version = '1.0.0',
-        scripts = {
-          start = 'node index.js',
-          test = 'jest',
-          build = 'webpack',
-          dev = 'nodemon index.js',
-        },
-      }
+    local ok, data = pcall(json.decode, str)
+    if ok then
+      return data
     end
     return {}
   end

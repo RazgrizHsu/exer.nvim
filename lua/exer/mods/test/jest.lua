@@ -29,7 +29,7 @@ local function parseJestCfg(path)
   if ext == 'json' then
     local src = vim.fn.readfile(path)
     local jsonStr = table.concat(src, '\n')
-    local ok, cfg = pcall(vim.fn.json_decode, jsonStr)
+    local ok, cfg = pcall(co.psr.json.decode, jsonStr)
     if ok and cfg.testMatch then return cfg.testMatch end
   elseif ext == 'ts' or ext == 'js' then
     local content = vim.fn.readfile(path)
@@ -60,7 +60,7 @@ local function parseJestCfg(path)
     if vim.v.shell_error == 0 then
       local cleanRst = rst:gsub('\n', ''):gsub('%s+', '')
       if cleanRst ~= 'null' and cleanRst ~= '' then
-        local ok, testMatch = pcall(vim.fn.json_decode, cleanRst)
+        local ok, testMatch = pcall(co.psr.json.decode, cleanRst)
         if ok and testMatch then return testMatch end
       end
     end

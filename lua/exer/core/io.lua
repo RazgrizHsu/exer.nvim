@@ -25,7 +25,8 @@ function M.readJson(path)
   local cnt = M.readFile(path)
   if not cnt then return nil end
 
-  local ok, rst = pcall(vim.fn.json_decode, cnt)
+  local psr = require('exer.core').psr
+  local ok, rst = pcall(psr.json.decode, cnt)
   if not ok then
     utils.msg('Error decoding JSON: ' .. path .. ' - ' .. tostring(rst), vim.log.levels.WARN)
     return nil

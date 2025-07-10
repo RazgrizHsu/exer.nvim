@@ -134,7 +134,7 @@ end
 function M.parseJson(cnt)
   if not cnt or cnt == '' then return nil end
 
-  local ok, json = pcall(vim.fn.json_decode, cnt)
+  local ok, json = pcall(co.psr.json.decode, cnt)
   if not ok or not json then return nil end
 
   local rst = { acts = {}, apps = {}, compilers = {} }

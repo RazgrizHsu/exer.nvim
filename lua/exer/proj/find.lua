@@ -1,5 +1,6 @@
 local M = {}
 local co = require('exer.core')
+local json = co.psr.json
 
 local function checkEmbedCfg(filePath, sec)
   if not co.io.fileExists(filePath) then
@@ -35,11 +36,11 @@ local function checkEmbedCfg(filePath, sec)
       co.log.debug('[find] No exer section found in .editorconfig')
     end
   elseif filePath:match('package%.json$') then
-    local ok, json = pcall(vim.fn.json_decode, fileCnt)
-    if ok and json and json.exec then return filePath end
+    local ok, data = pcall(json.decode, fileCnt)
+    if ok and data and data.exec then return filePath end
   elseif filePath:match('%.json$') then
-    local ok, json = pcall(vim.fn.json_decode, fileCnt)
-    if ok and json and (json.exer or json.acts or json.apps) then return filePath end
+    local ok, data = pcall(json.decode, fileCnt)
+    if ok and data and (data.exer or data.acts or data.apps) then return filePath end
   end
 
   return nil

@@ -10,5 +10,6 @@ return {
     toml = require('exer.core.psr.toml'),
     treesitter = require('exer.core.psr.treesitter'),
     editorconfig = require('exer.core.psr.editorconfig'),
+    json = require('exer.core.psr.json'),
   },
 }
