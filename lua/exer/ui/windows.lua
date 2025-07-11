@@ -100,6 +100,8 @@ function M.createMain(cfg)
   vim.wo[state.listW].number = false
   vim.wo[state.listW].relativenumber = false
   vim.wo[state.listW].signcolumn = 'no'
+  -- vim.wo[state.listW].cursorline = true
+  -- vim.wo[state.listW].cursorcolumn = false
   vim.wo[state.palW].number = false
   vim.wo[state.palW].relativenumber = false
   vim.wo[state.palW].signcolumn = 'no'
@@ -204,6 +206,9 @@ end
 function M.focus(winType)
   if winType == 'list' and M.isValid('list') then
     vim.api.nvim_set_current_win(state.listW)
+    -- Ensure cursor is at column 0 in the list window
+    local pos = vim.api.nvim_win_get_cursor(state.listW)
+    if pos[2] ~= 0 then vim.api.nvim_win_set_cursor(state.listW, { pos[1], 0 }) end
   elseif winType == 'panel' and M.isValid('panel') then
     vim.api.nvim_set_current_win(state.palW)
   end

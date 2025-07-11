@@ -13,12 +13,12 @@ local function isActReference(item) return type(item) == 'string' and item:match
 
 local function getActIdFromReference(item) return item:match('^cmd:(.+)$') end
 
-function M.executeAct(act, allActs)
+function M.executeAct(act, allActs, parentCwd)
   local rnr = require('exer.core.runner')
   local actCmd = act.cmd or act.cmds
   local expandedCmd = var.expandVars(actCmd)
   local env = act.env or {}
-  local cwd = act.cwd or vim.fn.getcwd()
+  local cwd = act.cwd and var.expandVars(act.cwd) or parentCwd or vim.fn.getcwd()
 
   if type(expandedCmd) == 'table' then
     if act.cmd then
@@ -78,7 +78,7 @@ function M.executeParallel(cmdList, actId, env, cwd, allActs)
       local refAct = findActById(refActId, allActs)
       if refAct then
         co.lg.debug(string.format('Executing referenced act: %s', refActId), 'ProjExecutor')
-        M.executeAct(refAct, allActs)
+        M.executeAct(refAct, allActs, cwd)
       else
         co.lg.warn(string.format('Referenced act not found: %s', refActId), 'ProjExecutor')
       end

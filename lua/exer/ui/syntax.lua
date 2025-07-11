@@ -64,6 +64,10 @@ function M.apply(buf)
       hi default link RazLogInstruction Comment
       hi default link RazLogKeysHeader Keyword
       hi default link RazLogKeyBinding Special
+
+      " Custom CursorLine for task list
+      hi RazCursorLine guibg=#3c3836 ctermbg=237
+      hi link CursorLine RazCursorLine
     ]])
     end
   )

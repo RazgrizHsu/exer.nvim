@@ -6,6 +6,11 @@ local utils = require('exer.core.utils')
 ---@return boolean
 function M.fileExists(path) return vim.fn.filereadable(path) == 1 end
 
+---Check if directory exists
+---@param path string Directory path
+---@return boolean
+function M.dirExists(path) return vim.fn.isdirectory(path) == 1 end
+
 ---Read file content
 ---@param path string File path
 ---@return string|nil File content, nil if failed

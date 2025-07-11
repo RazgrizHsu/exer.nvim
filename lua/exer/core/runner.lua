@@ -28,7 +28,15 @@ function M.run(config)
 
   -- Prepare opts for task.mk - include cwd and env for jobstart
   local taskOpts = cfg.opts or {}
-  if cfg.cwd then taskOpts.cwd = cfg.cwd end
+  if cfg.cwd then
+    -- Validate cwd exists before passing to task
+    local expandedCwd = vim.fn.expand(cfg.cwd)
+    if vim.fn.isdirectory(expandedCwd) ~= 1 then
+      utils.msg(string.format('Working directory does not exist: %s', cfg.cwd), vim.log.levels.ERROR)
+      return nil
+    end
+    taskOpts.cwd = cfg.cwd
+  end
   if cfg.env and next(cfg.env) then taskOpts.env = cfg.env end -- Only set env if it's not empty
 
   local t = task.mk(cfg.name, cfg.cmd, taskOpts)

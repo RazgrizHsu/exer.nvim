@@ -126,7 +126,30 @@ Install with your favorite package manager:
 | `<leader>rx` | `:ExerStop`          | Stop all running tasks               |
 | `<A-/>`      | `:ExerShow`          | Toggle task output window            |
 | `<C-w>t`     | `:ExerFocusUI`       | Focus on task output window          |
-| `<C-hjkl>`   | —                    | Navigate between editor and task UI  |
+| `<C-hjkl>`   | Smart Navigation     | Navigate between editor and task UI  |
+
+### Smart Navigation (`<C-hjkl>`)
+
+The smart navigation feature provides seamless movement between your editor and the task UI:
+
+- **From editor**:
+  - `<C-j>` or `<C-l>` - Move to task UI when it's open
+  - `<C-h>` or `<C-k>` - Standard Vim window navigation
+
+- **Within task UI**:
+  - `<C-h>` - Move from task panel to task list
+  - `<C-l>` - Move from task list to task panel
+  - `<C-k>` - Return to editor window
+  - `<C-j>` - Return to editor window
+
+**Note**: If you're using vim-tmux-navigator or similar plugins that bind `<C-hjkl>`, exer.nvim will intelligently defer to them when appropriate. The plugin will:
+1. First try standard Vim window navigation
+2. If that fails and you have tmux-navigator, it will try tmux navigation
+3. Finally, if still in the same window and task UI is open, it will navigate to the task UI
+
+To ensure exer.nvim's navigation works properly with vim-tmux-navigator, you can either:
+- Load exer.nvim after tmux-navigator (add `dependencies = { "christoomey/vim-tmux-navigator" }` to your config)
+- Or disable specific tmux-navigator keymaps that you want exer.nvim to handle
 
 ## Configuration
 

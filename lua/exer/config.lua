@@ -58,15 +58,18 @@ function M.setupKeymaps()
   end
 
   if not hasLazyKeys then
-    for _, keyDef in ipairs(options.keymaps) do
-      local lhs, cmd, desc = keyDef[1], keyDef[2], keyDef[3]
-      local existing = vim.fn.maparg(lhs, 'n', false, false)
-      if existing == '' then vim.api.nvim_set_keymap('n', lhs, '<cmd>' .. cmd .. '<cr>', {
-        noremap = true,
-        silent = true,
-        desc = desc,
-      }) end
-    end
+    -- Defer keymap setup to ensure they're set after other plugins
+    vim.defer_fn(function()
+      for _, keyDef in ipairs(options.keymaps) do
+        local lhs, cmd, desc = keyDef[1], keyDef[2], keyDef[3]
+        -- Always set the keymap to override existing mappings
+        vim.api.nvim_set_keymap('n', lhs, '<cmd>' .. cmd .. '<cr>', {
+          noremap = true,
+          silent = true,
+          desc = desc,
+        })
+      end
+    end, 100) -- Delay 100ms to ensure we run after other plugins
   end
 end
 

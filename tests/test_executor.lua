@@ -112,10 +112,10 @@ describe('Executor System Tests', function()
     ut.assert.are.equal(2, #mockTasks)
     ut.assert.are.equal('[proj] lint', mockTasks[1].name)
     ut.assert.are.equal('eslint src/', mockTasks[1].cmd)
-    ut.assert.are.equal('src', mockTasks[1].cwd)
+    ut.assert.are.equal('src', mockTasks[1].cwd) -- 引用的 act 有自己的 cwd，應使用自己的
     ut.assert.are.equal('[proj] format', mockTasks[2].name)
     ut.assert.are.equal('prettier --write src/', mockTasks[2].cmd)
-    ut.assert.are.equal('src', mockTasks[2].cwd)
+    ut.assert.are.equal('src', mockTasks[2].cwd) -- 引用的 act 有自己的 cwd，應使用自己的
   end)
 
   it('handles mixed direct commands and references', function()
@@ -234,5 +234,45 @@ describe('Executor System Tests', function()
 
     -- Restore original function
     vars.expandVars = originalExpandVars
+  end)
+
+  it('inherits cwd from parent when executing act references in parallel mode', function()
+    mockTasks = {}
+
+    local allActs = {
+      { id = 'lint', cmd = 'eslint src/' }, -- 沒有定義 cwd
+      { id = 'format', cmd = 'prettier --write src/' }, -- 沒有定義 cwd
+      { id = 'quality', cmds = { 'cmd:lint', 'cmd:format' }, cwd = './project' },
+    }
+
+    executor.executeAct(allActs[3], allActs)
+
+    ut.assert.are.equal(2, #mockTasks)
+    ut.assert.are.equal('[proj] lint', mockTasks[1].name)
+    ut.assert.are.equal('eslint src/', mockTasks[1].cmd)
+    ut.assert.are.equal('./project', mockTasks[1].cwd) -- 應繼承父級的 cwd
+    ut.assert.are.equal('[proj] format', mockTasks[2].name)
+    ut.assert.are.equal('prettier --write src/', mockTasks[2].cmd)
+    ut.assert.are.equal('./project', mockTasks[2].cwd) -- 應繼承父級的 cwd
+  end)
+
+  it('respects act own cwd over parent cwd when executing references', function()
+    mockTasks = {}
+
+    local allActs = {
+      { id = 'test', cmd = 'npm test', cwd = 'tests' }, -- 有自己的 cwd
+      { id = 'build', cmd = 'npm build' }, -- 沒有定義 cwd
+      { id = 'ci', cmds = { 'cmd:test', 'cmd:build' }, cwd = './project' },
+    }
+
+    executor.executeAct(allActs[3], allActs)
+
+    ut.assert.are.equal(2, #mockTasks)
+    ut.assert.are.equal('[proj] test', mockTasks[1].name)
+    ut.assert.are.equal('npm test', mockTasks[1].cmd)
+    ut.assert.are.equal('tests', mockTasks[1].cwd) -- 使用自己的 cwd
+    ut.assert.are.equal('[proj] build', mockTasks[2].name)
+    ut.assert.are.equal('npm build', mockTasks[2].cmd)
+    ut.assert.are.equal('./project', mockTasks[2].cwd) -- 繼承父級的 cwd
   end)
 end)

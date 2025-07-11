@@ -76,7 +76,35 @@ function M.smartNav(direction)
         return -- Standard navigation worked
       end
 
-      -- No movement happened, try going to task UI
+      -- No movement happened, check if tmux-navigator exists
+      local tmux_cmds = {
+        up = 'TmuxNavigateUp',
+        down = 'TmuxNavigateDown',
+        left = 'TmuxNavigateLeft',
+        right = 'TmuxNavigateRight',
+      }
+
+      local tmux_cmd = tmux_cmds[direction]
+      if tmux_cmd and vim.fn.exists(':' .. tmux_cmd) == 2 then
+        -- Try tmux navigation first
+        local ok = pcall(vim.cmd, tmux_cmd)
+        if ok then
+          -- Check if we actually moved to a different tmux pane
+          vim.defer_fn(function()
+            local after_tmux_win = vim.api.nvim_get_current_win()
+            if after_tmux_win == current_win then
+              -- Still in same window, tmux didn't move us, try task UI
+              if (direction == 'down' or direction == 'right') and ui_is_open then
+                local ui = require('exer.ui')
+                ui.focusUI()
+              end
+            end
+          end, 10) -- Small delay to let tmux navigation complete
+          return
+        end
+      end
+
+      -- No tmux or tmux navigation failed, try going to task UI
       if direction == 'down' or direction == 'right' then
         if ui_is_open then
           local ui = require('exer.ui')
@@ -93,6 +121,9 @@ function M.setupListKeymaps(buffer)
   -- Navigation keys that update panel content
   local function navAndUpdate(key)
     vim.cmd('normal! ' .. key)
+    -- Keep cursor at column 0 (first column)
+    local pos = vim.api.nvim_win_get_cursor(0)
+    if pos[2] ~= 0 then vim.api.nvim_win_set_cursor(0, { pos[1], 0 }) end
     updatePanelFromCursor()
   end
 
@@ -144,8 +175,19 @@ function M.setupListKeymaps(buffer)
     ui.close()
   end, opts)
 
+  -- Toggle auto scroll
+  vim.keymap.set('n', config.keymaps.toggle_auto_scroll, function()
+    local autoScroll = events.toggleAutoScroll()
+    co.utils.msg('Auto scroll: ' .. (autoScroll and 'ON' or 'OFF'))
+  end, opts)
+
   -- Tab: Switch to panel
   vim.keymap.set('n', '<Tab>', function()
+    if windows.isValid('panel') then windows.focus('panel') end
+  end, opts)
+
+  -- l: Switch to panel
+  vim.keymap.set('n', 'l', function()
     if windows.isValid('panel') then windows.focus('panel') end
   end, opts)
 
@@ -153,7 +195,10 @@ function M.setupListKeymaps(buffer)
   vim.keymap.set('n', '<LeftMouse>', function()
     -- Use nvim_win_set_cursor instead of normal! command to avoid modifiable issues
     local pos = vim.fn.getmousepos()
-    if pos.winid == vim.api.nvim_get_current_win() and pos.line > 0 then vim.api.nvim_win_set_cursor(0, { pos.line, pos.column - 1 }) end
+    if pos.winid == vim.api.nvim_get_current_win() and pos.line > 0 then
+      -- Always set cursor to column 0
+      vim.api.nvim_win_set_cursor(0, { pos.line, 0 })
+    end
     updatePanelFromCursor()
   end, opts)
 
@@ -220,6 +265,20 @@ function M.setupPanelKeymaps(buffer)
   -- Tab: Switch to list
   vim.keymap.set('n', '<Tab>', function()
     if windows.isValid('list') then windows.focus('list') end
+  end, opts)
+
+  -- h: Smart left navigation (switch to list only if at leftmost position)
+  vim.keymap.set('n', 'h', function()
+    local pos = vim.api.nvim_win_get_cursor(0)
+    local col = pos[2]
+
+    -- Try to move left first
+    if col > 0 then
+      vim.cmd('normal! h')
+    else
+      -- Already at leftmost position, switch to list
+      if windows.isValid('list') then windows.focus('list') end
+    end
   end, opts)
 
   -- Tab switching (only when multiple tabs exist)

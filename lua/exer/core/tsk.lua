@@ -68,6 +68,21 @@ function M.run(tid)
   optsJob.buffedStdOut = optsJob.buffedStdOut or false
   optsJob.buffedStdErr = optsJob.buffedStdErr or false
 
+  -- Validate cwd if provided
+  if optsJob.cwd then
+    local cwdPath = vim.fn.expand(optsJob.cwd)
+    if vim.fn.isdirectory(cwdPath) ~= 1 then
+      tsk.status = STATUS.FAILED
+      tsk.endTime = getNowMs()
+      table.insert(tsk.output, string.format('Error: Working directory does not exist: %s', optsJob.cwd))
+      log.error(string.format('Task #%d failed: Working directory does not exist: %s', tid, optsJob.cwd), 'Task')
+      vim.api.nvim_exec_autocmds('User', { pattern = 'RazTaskComplete', data = { tskId = tid, success = false } })
+      return false
+    end
+    -- Update to expanded path
+    optsJob.cwd = cwdPath
+  end
+
   tsk.jobId = vim.fn.jobstart(
     tsk.cmd,
     vim.tbl_extend('force', optsJob, {
