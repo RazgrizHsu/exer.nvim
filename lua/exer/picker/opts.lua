@@ -11,21 +11,11 @@ function M:add(text, value)
   return self
 end
 
-function M:addBu(text, value, name, typeStr)
+function M:addMod(text, value, name, typeStr)
   table.insert(self.items, {
     text = text,
     value = value,
-    type = typeStr or 'Build',
-    name = name,
-  })
-  return self
-end
-
-function M:addTf(text, value, name, typeStr)
-  table.insert(self.items, {
-    text = text,
-    value = value,
-    type = typeStr or 'Jest',
+    type = typeStr or (name and name:gsub('^%l', string.upper)) or 'Mod',
     name = name,
   })
   return self
@@ -36,28 +26,6 @@ function M:addProj(text, value, name)
     text = text,
     value = value,
     type = 'Proj',
-    name = name,
-  })
-  return self
-end
-
-function M:addLang(text, value, name, typeStr)
-  table.insert(self.items, {
-    text = text,
-    value = value,
-    type = typeStr or 'Lang',
-    name = name,
-  })
-  return self
-end
-
-function M:addUtil(text, value, name, typeStr)
-  local displayText = text
-  if name then displayText = name .. ': ' .. text end
-  table.insert(self.items, {
-    text = displayText,
-    value = value,
-    type = typeStr or 'Util',
     name = name,
   })
   return self

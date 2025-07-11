@@ -173,11 +173,11 @@ function M.getOpts(pathWorkDir, pathFile, fileType)
 
   if fileType == 'javascript' or fileType == 'typescript' or fileType == 'typescriptreact' or fileType == 'javascriptreact' then
     if isTestFile(pathFile) then
-      opts:addTf('Jest: Test at Cursor', keys.cursor, 'jest', 'Jest')
-      opts:addTf('Jest: Test Current File', keys.file, 'jest', 'Jest')
+      opts:addMod('Jest: Test at Cursor', keys.cursor, 'jest')
+      opts:addMod('Jest: Test Current File', keys.file, 'jest')
     end
 
-    opts:addTf('Jest: Run All Tests', keys.all, 'jest', 'Jest')
+    opts:addMod('Jest: Run All Tests', keys.all, 'jest')
   end
 
   return opts:build()

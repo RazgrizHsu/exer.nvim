@@ -41,14 +41,14 @@ function M.getOpts(pathWorkDir, pathFile, fileType)
   local opts = require('exer.picker.opts').new()
 
   if pathFile and pathFile:match('%.py$') then
-    opts:addLang('Run file', Keys.runFile, 'python', 'PY')
+    opts:addMod('Run file', Keys.runFile, 'python')
 
     -- Check if it's a test file
-    if pathFile:match('test_.*%.py$') or pathFile:match('.*_test%.py$') then opts:addLang('Run tests', Keys.runTest, 'python', 'PY') end
+    if pathFile:match('test_.*%.py$') or pathFile:match('.*_test%.py$') then opts:addMod('Run tests', Keys.runTest, 'python') end
   end
 
   -- Check for __main__.py to run as module
-  if co.io.fileExists(pathWorkDir .. '/__main__.py') then opts:addLang('Run as module', Keys.runModule, 'python', 'PY') end
+  if co.io.fileExists(pathWorkDir .. '/__main__.py') then opts:addMod('Run as module', Keys.runModule, 'python') end
 
   return opts:build()
 end

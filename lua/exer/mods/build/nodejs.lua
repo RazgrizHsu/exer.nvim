@@ -43,11 +43,11 @@ function M.getOpts(pathWorkDir, pathFile, fileType)
     local scripts = jsonPkg.scripts
 
     if scripts then
-      opts:addBu('npm install', Keys.install, 'nodejs', 'Node')
+      opts:addMod('npm install', Keys.install, 'nodejs')
 
       for script, _ in pairs(scripts) do
         local key = 'node:script:' .. script
-        opts:addBu('npm run ' .. script, key, 'nodejs', 'Node')
+        opts:addMod('npm run ' .. script, key, 'nodejs')
       end
     end
   end

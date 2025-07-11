@@ -44,11 +44,11 @@ function M.getOpts(pathWorkDir, pathFile, fileType)
   local opts = require('exer.picker.opts').new()
 
   if pathFile and pathFile:match('%.c$') then
-    opts:addLang('Compile file', Keys.compileFile, 'c', 'C')
-    opts:addLang('Compile and run', Keys.compileAndRun, 'c', 'C')
+    opts:addMod('Compile file', Keys.compileFile, 'c')
+    opts:addMod('Compile and run', Keys.compileAndRun, 'c')
 
     local execPath = pathFile:gsub('%.c$', '')
-    if co.io.fileExists(execPath) then opts:addLang('Run compiled file', Keys.runFile, 'c', 'C') end
+    if co.io.fileExists(execPath) then opts:addMod('Run compiled file', Keys.runFile, 'c') end
   end
 
   return opts:build()

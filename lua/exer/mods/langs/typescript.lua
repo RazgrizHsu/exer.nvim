@@ -43,14 +43,14 @@ function M.getOpts(pathWorkDir, pathFile, fileType)
   local opts = require('exer.picker.opts').new()
 
   if pathFile and pathFile:match('%.tsx?$') then
-    opts:addLang('Check file syntax', Keys.checkFile, 'typescript', 'TS')
-    opts:addLang('Compile file', Keys.compileFile, 'typescript', 'TS')
-    opts:addLang('Run with ts-node', Keys.runTsNode, 'typescript', 'TS')
+    opts:addMod('Check file syntax', Keys.checkFile, 'typescript', 'TS')
+    opts:addMod('Compile file', Keys.compileFile, 'typescript', 'TS')
+    opts:addMod('Run with ts-node', Keys.runTsNode, 'typescript', 'TS')
   end
 
   if co.io.fileExists(pathWorkDir .. '/tsconfig.json') then
-    opts:addLang('Check project', Keys.checkProj, 'typescript', 'TS')
-    opts:addLang('Build project', Keys.buildProj, 'typescript', 'TS')
+    opts:addMod('Check project', Keys.checkProj, 'typescript', 'TS')
+    opts:addMod('Build project', Keys.buildProj, 'typescript', 'TS')
   end
 
   return opts:build()

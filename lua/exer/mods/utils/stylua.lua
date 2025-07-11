@@ -33,12 +33,12 @@ function M.getOpts(workDir, pathFile, ft)
   local opts = require('exer.picker.opts').new()
 
   -- Always provide project-wide format
-  opts:addUtil('format project', Keys.formatProject, 'stylua')
+  opts:addMod('format project', Keys.formatProject, 'stylua')
 
   -- If current file is Lua, provide file-specific options
   if ft == 'lua' and pathFile and pathFile ~= '' then
-    opts:addUtil('check file', Keys.checkFile, 'stylua')
-    opts:addUtil('format file', Keys.formatFile, 'stylua')
+    opts:addMod('check file', Keys.checkFile, 'stylua')
+    opts:addMod('format file', Keys.formatFile, 'stylua')
   end
 
   return opts:build()
