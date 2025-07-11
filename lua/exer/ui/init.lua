@@ -28,6 +28,7 @@ function M.showList(skipFocusList)
   local _, listB, _, palB = wins.createMain(cfgs.all())
 
   wins.createKeysHelp(cfgs.all())
+  wins.createScrollStatus(cfgs.all())
 
   kmps.setupListKeymaps(listB)
   kmps.setupPanelKeymaps(palB)

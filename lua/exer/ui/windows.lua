@@ -9,6 +9,8 @@ local state = {
   palB = nil,
   keysW = nil,
   keysB = nil,
+  scrollW = nil,
+  scrollB = nil,
 }
 
 M.listW = nil
@@ -17,6 +19,8 @@ M.palW = nil
 M.palB = nil
 M.keysW = nil
 M.keysB = nil
+M.scrollW = nil
+M.scrollB = nil
 
 local function calcDims(cfg)
   local win_height, win_width
@@ -114,6 +118,21 @@ function M.createMain(cfg)
   return state.listW, state.listB, state.palW, state.palB
 end
 
+local function updateKeysContent(win_width)
+  if not state.keysB or not vim.api.nvim_buf_is_valid(state.keysB) then return end
+
+  local txtKey = '󰌑:view  ' .. config.keymaps.stop_task .. ':stop  ' .. config.keymaps.clear_completed .. ':clear  ' .. config.keymaps.close_ui .. ':quit'
+  local displayWidth = vim.fn.strdisplaywidth(txtKey)
+  local fullWidth = win_width
+  local totalPadding = fullWidth - displayWidth
+  local leftPadding = math.floor(totalPadding / 2)
+  local rightPadding = totalPadding - leftPadding
+
+  -- Make sure we fill the entire width
+  local centeredText = string.rep(' ', leftPadding) .. txtKey .. string.rep(' ', rightPadding)
+  vim.api.nvim_buf_set_lines(state.keysB, 0, -1, false, { centeredText })
+end
+
 function M.createKeysHelp(cfg)
   if not state.listW then return end
 
@@ -121,12 +140,13 @@ function M.createKeysHelp(cfg)
   local rowS, colS, _ = calcPos(win_height, win_width)
 
   state.keysB = createBuf('Keys Help', 'raz-keys', true)
-  local rowKey = rowS + win_height
-  local colKey = colS + 1
+  -- Position the keys window inside the list window border
+  local rowKey = rowS + win_height -- Position at the bottom of list window
+  local colKey = colS + 1 -- +1 to be inside the left border
 
   state.keysW = vim.api.nvim_open_win(state.keysB, false, {
     relative = 'editor',
-    width = win_width,
+    width = win_width, -- Same as list window content width
     height = 1,
     row = rowKey,
     col = colKey,
@@ -135,25 +155,86 @@ function M.createKeysHelp(cfg)
     zindex = 100,
   })
 
-  local txtKey = ' 󰌑:view  ' .. config.keymaps.stop_task .. ':stop  ' .. config.keymaps.clear_completed .. ':clear  ' .. config.keymaps.close_ui .. ':quit  '
-  vim.api.nvim_buf_set_lines(state.keysB, 0, -1, false, { txtKey })
+  -- Update content
+  updateKeysContent(win_width)
 
+  -- Define the highlight group
   vim.api.nvim_set_hl(0, 'RazKeysBlock', {
     bg = '#3c3836',
     fg = '#ebdbb2',
   })
 
-  vim.api.nvim_set_option_value('winhighlight', 'Normal:Normal', { win = state.keysW })
-  vim.api.nvim_buf_set_extmark(state.keysB, vim.api.nvim_create_namespace('raz_keys'), 0, 0, {
-    end_col = #txtKey,
-    hl_group = 'RazKeysBlock',
-  })
+  -- Apply highlighting to the window
+  vim.api.nvim_win_set_option(state.keysW, 'winhl', 'Normal:RazKeysBlock,NormalFloat:RazKeysBlock,NormalNC:RazKeysBlock,EndOfBuffer:RazKeysBlock')
+
+  -- Set the buffer's background
+  vim.api.nvim_buf_add_highlight(state.keysB, -1, 'RazKeysBlock', 0, 0, -1)
 
   M.keysW = state.keysW
   M.keysB = state.keysB
 
   return state.keysW, state.keysB
 end
+
+local function updateScrollContent()
+  if not state.scrollB or not vim.api.nvim_buf_is_valid(state.scrollB) then return end
+
+  local events = require('exer.ui.events')
+  local autoScroll = events.getAutoScroll()
+  local status = autoScroll and 'ON' or 'OFF'
+  local text = string.format(' AutoScroll(a): %s ', status)
+
+  vim.bo[state.scrollB].modifiable = true
+  vim.api.nvim_buf_set_lines(state.scrollB, 0, -1, false, { text })
+  vim.bo[state.scrollB].modifiable = false
+end
+
+function M.createScrollStatus(cfg)
+  if not state.palW then return end
+
+  local win_height, win_width = calcDims(cfg)
+  local rowS, colS, wDtl = calcPos(win_height, win_width)
+
+  state.scrollB = createBuf('AutoScroll Status', 'raz-scroll', true)
+
+  -- Calculate the width of the status text
+  local text = ' AutoScroll(a): OFF ' -- Use OFF as it's longer
+  local textWidth = #text
+
+  -- Position at the top-right corner of the panel window (one row down)
+  local scrollRow = rowS + 1 -- One row down from panel top
+  local scrollCol = colS + win_width + 3 + wDtl - textWidth -- Right-aligned
+
+  state.scrollW = vim.api.nvim_open_win(state.scrollB, false, {
+    relative = 'editor',
+    width = textWidth,
+    height = 1,
+    row = scrollRow,
+    col = scrollCol,
+    style = 'minimal',
+    focusable = false,
+    zindex = 101, -- Higher than other windows
+  })
+
+  -- Update content
+  updateScrollContent()
+
+  -- Define highlight group
+  vim.api.nvim_set_hl(0, 'RazScrollStatus', {
+    bg = '#504945',
+    fg = '#d5c4a1',
+  })
+
+  -- Apply highlighting
+  vim.api.nvim_win_set_option(state.scrollW, 'winhl', 'Normal:RazScrollStatus,NormalFloat:RazScrollStatus')
+
+  M.scrollW = state.scrollW
+  M.scrollB = state.scrollB
+
+  return state.scrollW, state.scrollB
+end
+
+function M.updateScrollStatus() updateScrollContent() end
 
 function M.createPanelBuffer(tid)
   if state.palB and vim.api.nvim_buf_is_valid(state.palB) then
@@ -188,6 +269,8 @@ function M.isValid(winType)
     return state.palW and vim.api.nvim_win_is_valid(state.palW)
   elseif winType == 'keys' then
     return state.keysW and vim.api.nvim_win_is_valid(state.keysW)
+  elseif winType == 'scroll' then
+    return state.scrollW and vim.api.nvim_win_is_valid(state.scrollW)
   end
   return false
 end
@@ -199,6 +282,8 @@ function M.isValidBuf(bufType)
     return state.palB and vim.api.nvim_buf_is_valid(state.palB)
   elseif bufType == 'keys' then
     return state.keysB and vim.api.nvim_buf_is_valid(state.keysB)
+  elseif bufType == 'scroll' then
+    return state.scrollB and vim.api.nvim_buf_is_valid(state.scrollB)
   end
   return false
 end
@@ -215,6 +300,7 @@ function M.focus(winType)
 end
 
 function M.close()
+  if state.scrollW and vim.api.nvim_win_is_valid(state.scrollW) then vim.api.nvim_win_close(state.scrollW, true) end
   if state.keysW and vim.api.nvim_win_is_valid(state.keysW) then vim.api.nvim_win_close(state.keysW, true) end
   if state.palW and vim.api.nvim_win_is_valid(state.palW) then vim.api.nvim_win_close(state.palW, true) end
   if state.listW and vim.api.nvim_win_is_valid(state.listW) then vim.api.nvim_win_close(state.listW, true) end
@@ -225,6 +311,8 @@ function M.close()
   state.palB = nil
   state.keysW = nil
   state.keysB = nil
+  state.scrollW = nil
+  state.scrollB = nil
 
   M.listW = nil
   M.listB = nil
@@ -232,6 +320,8 @@ function M.close()
   M.palB = nil
   M.keysW = nil
   M.keysB = nil
+  M.scrollW = nil
+  M.scrollB = nil
 end
 
 function M.isOpen() return M.isValid('list') or M.isValid('panel') end
@@ -260,13 +350,32 @@ function M.resize()
   }) end
 
   if M.isValid('keys') then
-    local rowKey = rowS + win_height
-    local colKey = colS + 1
+    local rowKey = rowS + win_height -- Position at the bottom of list window
+    local colKey = colS + 1 -- +1 to be inside the left border
+
     vim.api.nvim_win_set_config(state.keysW, {
       relative = 'editor',
       width = win_width,
       row = rowKey,
       col = colKey,
+    })
+
+    -- Update content using the shared function
+    updateKeysContent(win_width)
+  end
+
+  if M.isValid('scroll') then
+    -- Recalculate position for scroll status
+    local text = ' AutoScroll(a): OFF ' -- Use OFF as it's longer
+    local textWidth = #text
+    local scrollRow = rowS + 1 -- One row down from panel top
+    local scrollCol = colS + win_width + 3 + wDtl - textWidth
+
+    vim.api.nvim_win_set_config(state.scrollW, {
+      relative = 'editor',
+      width = textWidth,
+      row = scrollRow,
+      col = scrollCol,
     })
   end
 end

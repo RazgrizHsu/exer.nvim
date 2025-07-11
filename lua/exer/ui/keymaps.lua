@@ -179,6 +179,7 @@ function M.setupListKeymaps(buffer)
   vim.keymap.set('n', config.keymaps.toggle_auto_scroll, function()
     local autoScroll = events.toggleAutoScroll()
     co.utils.msg('Auto scroll: ' .. (autoScroll and 'ON' or 'OFF'))
+    windows.updateScrollStatus()
   end, opts)
 
   -- Tab: Switch to panel
@@ -260,6 +261,7 @@ function M.setupPanelKeymaps(buffer)
   vim.keymap.set('n', config.keymaps.toggle_auto_scroll, function()
     local autoScroll = events.toggleAutoScroll()
     co.utils.msg('Auto scroll: ' .. (autoScroll and 'ON' or 'OFF'))
+    windows.updateScrollStatus()
   end, opts)
 
   -- Tab: Switch to list
