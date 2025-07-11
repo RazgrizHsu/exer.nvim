@@ -4,130 +4,152 @@ ut.setup()
 describe('Variable expansion tests', function()
   local proj = require('exer.proj')
 
-  it('correctly expands ${file}', function()
-    ut.withTestFile('./tmp/test.py', 'print("hello")', function()
-      local cmd = proj.expandVars('python ${file}')
-      ut.assert.matches('/tmp/test%.py', cmd)
-    end)
+  ut.itEnv('correctly expands ${file}', {
+    cwd = '/test/project',
+    currentFile = 'test.py',
+    files = { ['test.py'] = 'print("hello")' },
+  }, function()
+    local cmd = proj.expandVars('python ${file}')
+    ut.assert.matches('python /test/project/test%.py', cmd)
   end)
 
-  it('correctly expands ${dir}', function()
-    ut.withTestFile('./tmp/test.py', 'print("hello")', function()
-      local cmd = proj.expandVars('cd ${dir}')
-      -- ${dir} 展開為完整路徑
-      ut.assert.matches('/Volumes/dyn/Dropbox/_env/mac/cfg/nvim/mods/exer', cmd)
-    end)
+  ut.itEnv('correctly expands ${dir}', {
+    cwd = '/test/project',
+    currentFile = 'test.py',
+    files = { ['test.py'] = 'print("hello")' },
+  }, function()
+    local cmd = proj.expandVars('cd ${dir}')
+    ut.assert.matches('cd /test/project', cmd)
   end)
 
-  it('correctly expands ${name}', function()
-    ut.withTestFile('./tmp/test.py', 'print("hello")', function()
-      local cmd = proj.expandVars('python ${name}.py')
-      -- 在當前測試環境中，vim.fn.expand 函數可能不能正常工作
-      -- 所以我們測試變數是否被替換（而非保留原樣）
-      ut.assert.is_false(cmd:match('${name}'), 'variable should be expanded')
-    end)
+  ut.itEnv('correctly expands ${name}', {
+    cwd = '/test/project',
+    currentFile = 'test.py',
+    files = { ['test.py'] = 'print("hello")' },
+  }, function()
+    local cmd = proj.expandVars('python ${name}.py')
+    ut.assert.matches('python test%.py', cmd)
   end)
 
-  it('correctly expands ${ext}', function()
-    ut.withTestFile('./tmp/test.py', 'print("hello")', function()
-      local cmd = proj.expandVars('echo ${ext}')
-      -- 檢查變數是否被展開
-      ut.assert.is_false(cmd:match('${ext}'), 'variable should be expanded')
-    end)
+  ut.itEnv('correctly expands ${ext}', {
+    cwd = '/test/project',
+    currentFile = 'test.py',
+    files = { ['test.py'] = 'print("hello")' },
+  }, function()
+    local cmd = proj.expandVars('echo ${ext}')
+    ut.assert.matches('echo py', cmd)
   end)
 
-  it('correctly expands ${stem}', function()
-    ut.withTestFile('./tmp/test.py', 'print("hello")', function()
-      local cmd = proj.expandVars('cp ${stem} backup')
-      -- 檢查變數是否被展開
-      ut.assert.is_false(cmd:match('${stem}'), 'variable should be expanded')
-    end)
+  ut.itEnv('correctly expands ${stem}', {
+    cwd = '/test/project',
+    currentFile = 'test.py',
+    files = { ['test.py'] = 'print("hello")' },
+  }, function()
+    local cmd = proj.expandVars('cp ${stem} backup')
+    ut.assert.matches('cp test%.py backup', cmd)
   end)
 
-  it('correctly expands ${root}', function()
-    ut.withTestFile('./tmp/test_proj/test.py', 'print("hello")', function()
-      local cmd = proj.expandVars('cd ${root}')
-      -- ${root} 是當前工作目錄
-      ut.assert.matches('/Volumes/dyn/Dropbox/_env/mac/cfg/nvim/mods/exer', cmd)
-    end)
+  ut.itEnv('correctly expands ${root}', {
+    cwd = '/test/project',
+    currentFile = 'test.py',
+    files = { ['test.py'] = 'print("hello")' },
+  }, function()
+    local cmd = proj.expandVars('cd ${root}')
+    ut.assert.matches('cd /test/project', cmd)
   end)
 
-  it('correctly expands multiple variables', function()
-    ut.withTestFile('./tmp/test.py', 'print("hello")', function()
-      local cmd = proj.expandVars('python ${file} --output ${dir}/result')
-      ut.assert.matches('/tmp/test%.py', cmd)
-      ut.assert.matches('/Volumes/dyn/Dropbox/_env/mac/cfg/nvim/mods/exer/result', cmd)
-    end)
+  ut.itEnv('correctly expands multiple variables', {
+    cwd = '/test/project',
+    currentFile = 'test.py',
+    files = { ['test.py'] = 'print("hello")' },
+  }, function()
+    local cmd = proj.expandVars('python ${file} --output ${dir}/result')
+    ut.assert.matches('python /test/project/test%.py', cmd)
+    ut.assert.matches('%-%-output /test/project/result', cmd)
   end)
 
-  it('expands array commands', function()
-    ut.withTestFile('./tmp/test.py', 'print("hello")', function()
-      local cmds = proj.expandVars({ 'echo ${file}', 'python ${file}' })
-      ut.assert.are.equal('table', type(cmds))
-      ut.assert.matches('/tmp/test%.py', cmds[1])
-      ut.assert.matches('/tmp/test%.py', cmds[2])
-    end)
+  ut.itEnv('expands array commands', {
+    cwd = '/test/project',
+    currentFile = 'test.py',
+    files = { ['test.py'] = 'print("hello")' },
+  }, function()
+    local cmds = proj.expandVars({ 'echo ${file}', 'python ${file}' })
+    ut.assert.are.equal('table', type(cmds))
+    ut.assert.matches('echo /test/project/test%.py', cmds[1])
+    ut.assert.matches('python /test/project/test%.py', cmds[2])
   end)
 
-  it('preserves unknown variables', function()
-    ut.withTestFile('./tmp/test.py', 'print("hello")', function()
-      local cmd = proj.expandVars('echo ${unknown}')
-      ut.assert.matches('${unknown}', cmd)
-    end)
+  ut.itEnv('preserves unknown variables', {
+    cwd = '/test/project',
+    currentFile = 'test.py',
+    files = { ['test.py'] = 'print("hello")' },
+  }, function()
+    local cmd = proj.expandVars('echo ${unknown}')
+    ut.assert.matches('echo %${unknown}', cmd)
   end)
 
-  it('handles complex commands', function()
-    ut.withTestFile('./tmp/test.c', 'int main() { return 0; }', function()
-      local cmd = proj.expandVars('gcc ${name}.c -o ${name} && ./${name}')
-      -- 檢查變數是否被展開
-      ut.assert.is_false(cmd:match('${name}'), 'all variables should be expanded')
-    end)
+  ut.itEnv('handles complex commands', {
+    cwd = '/test/project',
+    currentFile = 'test.c',
+    files = { ['test.c'] = 'int main() { return 0; }' },
+  }, function()
+    local cmd = proj.expandVars('gcc ${name}.c -o ${name} && ./${name}')
+    ut.assert.matches('gcc test%.c %-o test', cmd)
+    ut.assert.matches('&& %./test', cmd)
   end)
 
-  it('correctly expands ${filename}', function()
-    ut.withTestFile('./tmp/test.py', 'print("hello")', function()
-      local cmd = proj.expandVars('cp ${filename} backup')
-      -- 檢查變數是否被展開
-      ut.assert.is_false(cmd:match('${filename}'), 'variable should be expanded')
-    end)
+  ut.itEnv('correctly expands ${filename}', {
+    cwd = '/test/project',
+    currentFile = 'test.py',
+    files = { ['test.py'] = 'print("hello")' },
+  }, function()
+    local cmd = proj.expandVars('cp ${filename} backup')
+    ut.assert.matches('cp test%.py backup', cmd)
   end)
 
-  it('correctly expands ${filetype}', function()
-    ut.withTestFile('./tmp/test.py', 'print("hello")', function()
-      local cmd = proj.expandVars('echo ${filetype}')
-      ut.assert.matches('python', cmd)
-    end)
+  ut.itEnv('correctly expands ${filetype}', {
+    cwd = '/test/project',
+    currentFile = 'test.py',
+    files = { ['test.py'] = 'print("hello")' },
+  }, function()
+    local cmd = proj.expandVars('echo ${filetype}')
+    ut.assert.matches('echo python', cmd)
   end)
 
-  it('correctly expands ${fullname}', function()
-    ut.withTestFile('./tmp/test.py', 'print("hello")', function()
-      local cmd = proj.expandVars('gcc ${fullname}.o')
-      -- 檢查變數是否被展開
-      ut.assert.is_false(cmd:match('${fullname}'), 'variable should be expanded')
-    end)
+  ut.itEnv('correctly expands ${fullname}', {
+    cwd = '/test/project',
+    currentFile = 'test.py',
+    files = { ['test.py'] = 'print("hello")' },
+  }, function()
+    local cmd = proj.expandVars('gcc ${fullname}.o')
+    ut.assert.matches('gcc /test/project/test%.o', cmd)
   end)
 
-  it('correctly expands ${cwd}', function()
-    ut.withTestFile('./tmp/test_proj/test.py', 'print("hello")', function()
-      local cmd = proj.expandVars('cd ${cwd}')
-      -- ${cwd} 是當前工作目錄
-      ut.assert.matches('/Volumes/dyn/Dropbox/_env/mac/cfg/nvim/mods/exer', cmd)
-    end)
+  ut.itEnv('correctly expands ${cwd}', {
+    cwd = '/test/project',
+    currentFile = 'test.py',
+    files = { ['test.py'] = 'print("hello")' },
+  }, function()
+    local cmd = proj.expandVars('cd ${cwd}')
+    ut.assert.matches('cd /test/project', cmd)
   end)
 
-  it('correctly expands ${dirname}', function()
-    ut.withTestFile('./tmp/test_proj/test.py', 'print("hello")', function()
-      local cmd = proj.expandVars('echo ${dirname}')
-      -- ${dirname} 是當前目錄名稱
-      ut.assert.matches('exer', cmd)
-    end)
+  ut.itEnv('correctly expands ${dirname}', {
+    cwd = '/test/project',
+    currentFile = 'test.py',
+    files = { ['test.py'] = 'print("hello")' },
+  }, function()
+    local cmd = proj.expandVars('echo ${dirname}')
+    ut.assert.matches('echo project', cmd)
   end)
 
-  it('correctly expands ${servername}', function()
-    ut.withTestFile('./tmp/test.py', 'print("hello")', function()
-      local cmd = proj.expandVars('echo ${servername}')
-      -- servername 可能為空或包含特定值
-      ut.assert.is_false(cmd:match('${servername}'), 'variable should be expanded')
-    end)
+  ut.itEnv('correctly expands ${servername}', {
+    cwd = '/test/project',
+    currentFile = 'test.py',
+    files = { ['test.py'] = 'print("hello")' },
+  }, function()
+    local cmd = proj.expandVars('echo ${servername}')
+    -- servername 可能為空字串或實際值，但不應該保持 ${servername} 格式
+    ut.assert.is_false(cmd:match('%${servername}'), 'variable should be expanded')
   end)
 end)

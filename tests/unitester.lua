@@ -208,6 +208,8 @@ function M.itEnv(name, env, callback)
     local originalGetRoot = co.io.getRoot
     local originalFileExists = co.io.fileExists
     local originalReadFile = vim.fn.readfile
+    local originalGetcwd = vim.fn.getcwd
+    local originalExpand = vim.fn.expand
 
     -- 確保清理任何快取狀態
     proj.clearCache()
@@ -276,6 +278,37 @@ function M.itEnv(name, env, callback)
       M.ctx.filetype = env.filetype or inferFileType(env.currentFile)
     end
 
+    -- Mock vim functions for variable expansion
+    if env.cwd then vim.fn.getcwd = function() return env.cwd end end
+
+    if env.currentFile then
+      local fullPath = env.cwd and (env.cwd .. '/' .. env.currentFile) or env.currentFile
+      local fileName = env.currentFile:match('[^/]+$')
+      local nameWithoutExt = fileName:match('(.+)%..+$') or fileName
+      local ext = fileName:match('%.([^%.]+)$') or ''
+
+      vim.fn.expand = function(pattern)
+        -- Mock expand patterns for file variables
+        if pattern == '%:p' then
+          return fullPath
+        elseif pattern == '%:p:h' then
+          return env.cwd
+        elseif pattern == '%:t' then
+          return fileName
+        elseif pattern == '%:t:r' then
+          return nameWithoutExt
+        elseif pattern == '%:p:r' then
+          return env.cwd .. '/' .. nameWithoutExt
+        elseif pattern == '%:e' then
+          return ext
+        else
+          return originalExpand(pattern)
+        end
+      end
+    end
+
+    -- Note: vim.v.servername is read-only, so we can't mock it in tests
+
     -- 執行測試
     local success, result = pcall(callback)
 
@@ -288,6 +321,8 @@ function M.itEnv(name, env, callback)
     co.io.getRoot = originalGetRoot
     co.io.fileExists = originalFileExists
     vim.fn.readfile = originalReadFile
+    vim.fn.getcwd = originalGetcwd
+    vim.fn.expand = originalExpand
 
     -- 不需要清理實體檔案，因為我們用 mock
 
